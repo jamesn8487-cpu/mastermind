@@ -1,0 +1,12 @@
+{
+  "name": "mastermind",
+  "version": "1.0.0",
+  "description": "AI-powered adaptive learning app",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

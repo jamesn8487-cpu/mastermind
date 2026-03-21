@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MasterMind — AI Tutor That Adapts to You</title>
+<meta name="description" content="MasterMind is your personal AI tutor. It builds a custom curriculum, teaches you step by step, and drills exactly what you keep getting wrong. Free to start.">
+<meta name="keywords" content="AI tutor, study app, adaptive learning, flashcards, spaced repetition, learn online">
+<meta property="og:title" content="MasterMind — AI Tutor That Adapts to You">
+<meta property="og:description" content="Your personal AI tutor that builds a custom curriculum, teaches it clearly, and zeros in on what you find hardest.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mastermind-one-pi.vercel.app">
+<link rel="canonical" href="https://mastermind-one-pi.vercel.app">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,700;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f5ef;
+  --ink: #1a1814;
+  --ink2: #3d3a34;
+  --muted: #8c897f;
+  --border: #e0dbd0;
+  --gold: #c8952a;
+  --gold-light: #f5edd8;
+  --white: #ffffff;
+  --ok: #2d6e47;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 18px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(248,245,239,.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-family: 'EB Garamond', serif;
+  font-size: 22px; font-weight: 500;
+  color: var(--ink); text-decoration: none;
+  letter-spacing: -.3px;
+}
+.nav-logo span { color: var(--gold); }
+.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-links a {
+  font-size: 13px; font-weight: 400; color: var(--muted);
+  text-decoration: none; transition: color .15s;
+}
+.nav-links a:hover { color: var(--ink); }
+.nav-cta {
+  background: var(--ink); color: var(--bg);
+  padding: 9px 22px; border-radius: 4px;
+  font-size: 13px; font-weight: 500;
+  text-decoration: none; transition: all .2s;
+}
+.nav-cta:hover { background: var(--ink2); transform: translateY(-1px); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(200,149,42,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--gold-light); border: 1px solid rgba(200,149,42,.3);
+  border-radius: 20px; padding: 6px 16px;
+  font-size: 11px; font-weight: 500; color: var(--gold);
+  text-transform: uppercase; letter-spacing: 1.2px;
+  margin-bottom: 28px;
+  animation: fadeUp .6s ease both;
+}
+.hero-eyebrow::before { content: '✦'; font-size: 10px; }
+.hero-h1 {
+  font-family: 'EB Garamond', serif;
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 400; line-height: 1.05;
+  color: var(--ink); letter-spacing: -.5px;
+  max-width: 900px;
+  animation: fadeUp .6s .1s ease both;
+}
+.hero-h1 em { font-style: italic; color: var(--gold); }
+.hero-sub {
+  font-size: clamp(16px, 2.5vw, 20px);
+  color: var(--muted); max-width: 520px;
+  margin: 24px auto 40px;
+  font-weight: 300; line-height: 1.7;
+  animation: fadeUp .6s .2s ease both;
+}
+.hero-actions {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center;
+  animation: fadeUp .6s .3s ease both;
+}
+.btn-primary {
+  background: var(--ink); color: var(--bg);
+  padding: 14px 32px; border-radius: 4px;
+  font-size: 14px; font-weight: 500;
+  text-decoration: none; transition: all .2s;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary:hover { background: var(--ink2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+.btn-secondary {
+  color: var(--ink); font-size: 14px; font-weight: 400;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  border-bottom: 1px solid var(--border); padding-bottom: 2px; transition: all .15s;
+}
+.btn-secondary:hover { border-color: var(--ink); }
+.hero-social {
+  margin-top: 48px; font-size: 12px; color: var(--muted);
+  animation: fadeUp .6s .4s ease both;
+}
+.hero-social strong { color: var(--ink); }
+
+/* ── MARQUEE ── */
+.marquee-wrap {
+  overflow: hidden; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  background: var(--white); padding: 14px 0;
+}
+.marquee-track {
+  display: flex; gap: 48px; width: max-content;
+  animation: marquee 20s linear infinite;
+}
+.marquee-item {
+  font-family: 'EB Garamond', serif; font-size: 15px;
+  color: var(--muted); white-space: nowrap;
+  display: flex; align-items: center; gap: 12px;
+}
+.marquee-item::after { content: '✦'; font-size: 10px; color: var(--border); }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* ── FEATURES ── */
+.section { padding: 100px 24px; max-width: 1100px; margin: 0 auto; }
+.section-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--gold); font-weight: 500; margin-bottom: 16px;
+}
+.section-title {
+  font-family: 'EB Garamond', serif;
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 400; color: var(--ink);
+  line-height: 1.15; max-width: 640px;
+  margin-bottom: 60px;
+}
+.section-title em { font-style: italic; color: var(--gold); }
+
+.features-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 2px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+}
+.feat {
+  background: var(--white); padding: 36px 32px;
+  transition: background .15s;
+}
+.feat:hover { background: var(--gold-light); }
+.feat-icon { font-size: 28px; margin-bottom: 16px; display: block; }
+.feat-title {
+  font-family: 'EB Garamond', serif;
+  font-size: 20px; font-weight: 500;
+  color: var(--ink); margin-bottom: 10px;
+}
+.feat-body { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+/* ── HOW IT WORKS ── */
+.how-wrap { background: var(--ink); padding: 100px 24px; }
+.how-inner { max-width: 1100px; margin: 0 auto; }
+.how-inner .section-label { color: var(--gold); }
+.how-inner .section-title { color: var(--bg); }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-top: 0; }
+.step {
+  padding: 32px 28px; border: 1px solid rgba(255,255,255,.08);
+  border-radius: 6px; position: relative;
+}
+.step-num {
+  font-family: 'EB Garamond', serif;
+  font-size: 48px; font-weight: 400;
+  color: rgba(255,255,255,.1); line-height: 1;
+  margin-bottom: 16px;
+}
+.step-title {
+  font-family: 'EB Garamond', serif;
+  font-size: 18px; color: var(--bg);
+  margin-bottom: 8px;
+}
+.step-body { font-size: 12px; color: rgba(255,255,255,.45); line-height: 1.7; }
+
+/* ── SUBJECTS ── */
+.subjects-grid {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 40px;
+}
+.subj-tag {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 20px; padding: 8px 18px;
+  font-size: 13px; color: var(--ink2);
+  display: flex; align-items: center; gap: 7px;
+  transition: all .15s;
+}
+.subj-tag:hover { border-color: var(--gold); background: var(--gold-light); }
+
+/* ── TESTIMONIALS ── */
+.testimonials { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+.testi {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 8px; padding: 28px;
+}
+.testi-text {
+  font-family: 'EB Garamond', serif;
+  font-size: 18px; font-style: italic;
+  color: var(--ink); line-height: 1.6; margin-bottom: 20px;
+}
+.testi-author { font-size: 12px; color: var(--muted); }
+.testi-author strong { color: var(--ink); display: block; font-style: normal; font-family: 'DM Sans', sans-serif; }
+.stars { color: var(--gold); font-size: 12px; margin-bottom: 14px; }
+
+/* ── CTA SECTION ── */
+.cta-section {
+  text-align: center; padding: 120px 24px;
+  background: linear-gradient(180deg, var(--bg) 0%, var(--gold-light) 100%);
+  border-top: 1px solid var(--border);
+}
+.cta-section .section-title { margin: 0 auto 16px; max-width: 600px; }
+.cta-sub { font-size: 15px; color: var(--muted); margin-bottom: 40px; }
+.cta-free { font-size: 11px; color: var(--muted); margin-top: 14px; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--ink); color: rgba(255,255,255,.4);
+  padding: 48px; display: flex;
+  align-items: center; justify-content: space-between;
+  font-size: 12px;
+}
+footer a { color: rgba(255,255,255,.4); text-decoration: none; transition: color .15s; }
+footer a:hover { color: rgba(255,255,255,.8); }
+.footer-logo {
+  font-family: 'EB Garamond', serif;
+  font-size: 20px; color: rgba(255,255,255,.8);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.reveal {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── PRICING ── */
+.pricing-wrap { background: var(--white); padding: 100px 24px; border-top: 1px solid var(--border); }
+.pricing-inner { max-width: 1100px; margin: 0 auto; }
+.pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 0; }
+.plan {
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 36px 32px; background: var(--bg);
+  display: flex; flex-direction: column; position: relative;
+  transition: box-shadow .2s;
+}
+.plan:hover { box-shadow: 0 8px 32px rgba(0,0,0,.08); }
+.plan.popular {
+  border-color: var(--gold); background: var(--white);
+  box-shadow: 0 4px 24px rgba(200,149,42,.15);
+}
+.plan-badge {
+  position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+  background: var(--gold); color: var(--white);
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1px; padding: 4px 14px; border-radius: 20px;
+}
+.plan-name {
+  font-family: 'EB Garamond', serif;
+  font-size: 24px; font-weight: 400; color: var(--ink);
+  margin-bottom: 6px;
+}
+.plan-desc { font-size: 12px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+.plan-price {
+  display: flex; align-items: flex-end; gap: 4px;
+  margin-bottom: 6px;
+}
+.plan-amount {
+  font-family: 'EB Garamond', serif;
+  font-size: 48px; font-weight: 400; color: var(--ink); line-height: 1;
+}
+.plan-currency { font-size: 20px; color: var(--muted); margin-bottom: 8px; }
+.plan-period { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+.plan-features { list-style: none; flex: 1; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+.plan-features li {
+  font-size: 13px; color: var(--ink2);
+  display: flex; align-items: flex-start; gap: 9px; line-height: 1.5;
+}
+.plan-features li::before { content: '✓'; color: var(--ok); font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+.plan-features li.no { color: var(--muted); }
+.plan-features li.no::before { content: '–'; color: var(--border); }
+.plan-btn {
+  display: block; text-align: center; text-decoration: none;
+  padding: 12px 24px; border-radius: 4px;
+  font-size: 13px; font-weight: 500; transition: all .2s;
+}
+.plan-btn.outline {
+  border: 1px solid var(--border); color: var(--ink); background: none;
+}
+.plan-btn.outline:hover { border-color: var(--ink); }
+.plan-btn.solid {
+  background: var(--ink); color: var(--bg); border: none;
+}
+.plan-btn.solid:hover { background: var(--ink2); transform: translateY(-1px); }
+.plan-btn.gold {
+  background: var(--gold); color: var(--white); border: none;
+}
+.plan-btn.gold:hover { background: #b5831f; transform: translateY(-1px); }
+.pricing-note { text-align: center; margin-top: 24px; font-size: 12px; color: var(--muted); }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  nav { padding: 14px 20px; }
+  .nav-links { display: none; }
+  .features-grid { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr 1fr; }
+  .testimonials { grid-template-columns: 1fr; }
+  footer { flex-direction: column; gap: 16px; text-align: center; }
+  .section { padding: 60px 20px; }
+  .pricing-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">MasterMind<span>.</span></a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#subjects">Subjects</a>
+    <a href="#pricing">Pricing</a>
+    <a href="https://mastermind-one-pi.vercel.app" class="nav-cta">Open App →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">AI-Powered Adaptive Learning</div>
+  <h1 class="hero-h1">The tutor that learns<br><em>how you learn.</em></h1>
+  <p class="hero-sub">MasterMind builds you a custom curriculum, teaches it step by step, and drills exactly what you keep getting wrong — until you master it.</p>
+  <div class="hero-actions">
+    <a href="https://mastermind-one-pi.vercel.app" class="btn-primary">Start Learning Free →</a>
+    <a href="#how" class="btn-secondary">See how it works ↓</a>
+  </div>
+  <p class="hero-social">Free to start · <strong>No signup required</strong> · Works on any device</p>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span class="marquee-item">Calculus</span>
+    <span class="marquee-item">Essay Writing</span>
+    <span class="marquee-item">Python</span>
+    <span class="marquee-item">Biology</span>
+    <span class="marquee-item">Roman History</span>
+    <span class="marquee-item">Chemistry</span>
+    <span class="marquee-item">Economics</span>
+    <span class="marquee-item">Philosophy</span>
+    <span class="marquee-item">Statistics</span>
+    <span class="marquee-item">Machine Learning</span>
+    <span class="marquee-item">English Literature</span>
+    <span class="marquee-item">Marketing</span>
+    <!-- duplicate for seamless loop -->
+    <span class="marquee-item">Calculus</span>
+    <span class="marquee-item">Essay Writing</span>
+    <span class="marquee-item">Python</span>
+    <span class="marquee-item">Biology</span>
+    <span class="marquee-item">Roman History</span>
+    <span class="marquee-item">Chemistry</span>
+    <span class="marquee-item">Economics</span>
+    <span class="marquee-item">Philosophy</span>
+    <span class="marquee-item">Statistics</span>
+    <span class="marquee-item">Machine Learning</span>
+    <span class="marquee-item">English Literature</span>
+    <span class="marquee-item">Marketing</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="reveal">
+    <div class="section-label">Features</div>
+    <div class="section-title">Everything you need to <em>actually</em> master a subject.</div>
+  </div>
+  <div class="features-grid reveal">
+    <div class="feat">
+      <span class="feat-icon">🧠</span>
+      <div class="feat-title">Adaptive Curriculum</div>
+      <p class="feat-body">Enter any subject and the AI instantly generates a structured, sequential curriculum tailored to that topic — no setup needed.</p>
+    </div>
+    <div class="feat">
+      <span class="feat-icon">🎯</span>
+      <div class="feat-title">Targets Your Weak Spots</div>
+      <p class="feat-body">Every wrong answer is tracked. MasterMind re-teaches what you struggled with using completely different examples and analogies.</p>
+    </div>
+    <div class="feat">
+      <span class="feat-icon">🃏</span>
+      <div class="feat-title">Flashcard Mode</div>
+      <p class="feat-body">Flip through topic summaries as cards with keyboard shortcuts. Perfect for quick review before an exam.</p>
+    </div>
+    <div class="feat">
+      <span class="feat-icon">↻</span>
+      <div class="feat-title">Spaced Repetition</div>
+      <p class="feat-body">Once you master a topic, MasterMind schedules it for review at the optimal time based on the forgetting curve — so it actually sticks.</p>
+    </div>
+    <div class="feat">
+      <span class="feat-icon">📊</span>
+      <div class="feat-title">Mastery Tracking</div>
+      <p class="feat-body">See your mastery percentage per topic, track study time, and get a full progress report you can export and print.</p>
+    </div>
+    <div class="feat">
+      <span class="feat-icon">📝</span>
+      <div class="feat-title">Topic Notes</div>
+      <p class="feat-body">Jot notes for each topic as you study. They're saved automatically and tied to that specific topic so you can find them later.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<div class="how-wrap" id="how">
+  <div class="how-inner">
+    <div class="section-label reveal">How it works</div>
+    <div class="section-title reveal">From zero to mastery<br>in four steps.</div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <div class="step-title">Pick a subject</div>
+        <p class="step-body">Type any subject — Calculus, Essay Writing, Python, Roman History. Or upload your own notes and slides.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">02</div>
+        <div class="step-title">AI builds your curriculum</div>
+        <p class="step-body">In seconds, MasterMind creates a structured set of topics in the right learning order, with time estimates for each.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">03</div>
+        <div class="step-title">Learn and get tested</div>
+        <p class="step-body">Each topic gets a clear lesson followed by questions. Get something wrong and it re-teaches using a different approach.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">04</div>
+        <div class="step-title">Review and retain</div>
+        <p class="step-body">Spaced repetition schedules reviews at the perfect time so knowledge sticks long after the session ends.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUBJECTS -->
+<section class="section" id="subjects">
+  <div class="reveal">
+    <div class="section-label">Subjects</div>
+    <div class="section-title">Study anything.<br><em>Master everything.</em></div>
+  </div>
+  <div class="subjects-grid reveal">
+    <div class="subj-tag">🧬 Biology</div>
+    <div class="subj-tag">⚗️ Chemistry</div>
+    <div class="subj-tag">⚡ Physics</div>
+    <div class="subj-tag">🧮 Calculus</div>
+    <div class="subj-tag">📐 Statistics</div>
+    <div class="subj-tag">💻 Python</div>
+    <div class="subj-tag">🌐 Web Development</div>
+    <div class="subj-tag">🤖 Machine Learning</div>
+    <div class="subj-tag">✍️ Essay Writing</div>
+    <div class="subj-tag">💬 English Literature</div>
+    <div class="subj-tag">🏛️ Roman History</div>
+    <div class="subj-tag">📜 Philosophy</div>
+    <div class="subj-tag">📈 Economics</div>
+    <div class="subj-tag">💼 Marketing</div>
+    <div class="subj-tag">💰 Finance</div>
+    <div class="subj-tag">🔒 Cybersecurity</div>
+    <div class="subj-tag">🌍 Earth Science</div>
+    <div class="subj-tag">📊 Accounting</div>
+    <div class="subj-tag">+ anything you can think of</div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section">
+  <div class="reveal">
+    <div class="section-label">What students say</div>
+    <div class="section-title">Actually works.</div>
+  </div>
+  <div class="testimonials reveal">
+    <div class="testi">
+      <div class="stars">★★★★★</div>
+      <p class="testi-text">"I went from failing my Calculus mid-term to acing the final. It kept drilling the exact concepts I couldn't get right."</p>
+      <div class="testi-author"><strong>Alex T.</strong> University student</div>
+    </div>
+    <div class="testi">
+      <div class="stars">★★★★★</div>
+      <p class="testi-text">"I uploaded my lecture slides and it built a full study plan in seconds. Nothing else comes close for exam prep."</p>
+      <div class="testi-author"><strong>Priya M.</strong> Year 12 student</div>
+    </div>
+    <div class="testi">
+      <div class="stars">★★★★★</div>
+      <p class="testi-text">"The spaced repetition is what got me. I actually remember things weeks later now. It's like having a private tutor 24/7."</p>
+      <div class="testi-author"><strong>James N.</strong> Self-learner</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<div class="pricing-wrap" id="pricing">
+  <div class="pricing-inner">
+    <div style="margin-bottom:48px">
+      <div class="section-label reveal">Pricing</div>
+      <div class="section-title reveal">Simple, honest pricing.<br><em>No surprises.</em></div>
+    </div>
+    <div class="pricing-grid">
+
+      <!-- FREE -->
+      <div class="plan reveal">
+        <div class="plan-name">Starter</div>
+        <p class="plan-desc">Perfect for trying it out or casual study sessions.</p>
+        <div class="plan-price">
+          <span class="plan-currency">$</span>
+          <span class="plan-amount">0</span>
+        </div>
+        <div class="plan-period">Free forever</div>
+        <ul class="plan-features">
+          <li>3 subjects</li>
+          <li>All subjects & topics</li>
+          <li>Spaced repetition reviews</li>
+          <li>Flashcard mode</li>
+          <li>Progress tracking</li>
+          <li class="no">Unlimited subjects</li>
+          <li class="no">Upload notes & slides</li>
+          <li class="no">Export progress reports</li>
+          <li class="no">Priority AI responses</li>
+        </ul>
+        <a href="https://mastermind-one-pi.vercel.app" class="plan-btn outline">Get started free</a>
+      </div>
+
+      <!-- PRO -->
+      <div class="plan popular reveal">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-name">Pro</div>
+        <p class="plan-desc">For serious students who want the full MasterMind experience.</p>
+        <div class="plan-price">
+          <span class="plan-currency">$</span>
+          <span class="plan-amount">12</span>
+        </div>
+        <div class="plan-period">per month · billed monthly</div>
+        <ul class="plan-features">
+          <li>Unlimited subjects</li>
+          <li>All subjects & topics</li>
+          <li>Spaced repetition reviews</li>
+          <li>Flashcard mode</li>
+          <li>Progress tracking</li>
+          <li>Upload notes & slides</li>
+          <li>Export progress reports</li>
+          <li>Priority AI responses</li>
+          <li>Topic notes & highlights</li>
+        </ul>
+        <a href="https://mastermind-one-pi.vercel.app" class="plan-btn gold">Start Pro free for 7 days</a>
+      </div>
+
+      <!-- ANNUAL -->
+      <div class="plan reveal">
+        <div class="plan-name">Pro Annual</div>
+        <p class="plan-desc">All of Pro, at a discount. Best value for dedicated learners.</p>
+        <div class="plan-price">
+          <span class="plan-currency">$</span>
+          <span class="plan-amount">8</span>
+        </div>
+        <div class="plan-period">per month · billed $96/year</div>
+        <ul class="plan-features">
+          <li>Everything in Pro</li>
+          <li>Save 33% vs monthly</li>
+          <li>Unlimited subjects</li>
+          <li>Upload notes & slides</li>
+          <li>Export progress reports</li>
+          <li>Priority AI responses</li>
+          <li>Topic notes & highlights</li>
+          <li>Early access to new features</li>
+          <li>Email support</li>
+        </ul>
+        <a href="https://mastermind-one-pi.vercel.app" class="plan-btn solid">Get annual plan</a>
+      </div>
+
+    </div>
+    <p class="pricing-note">All plans include a 7-day free trial. Cancel anytime, no questions asked.</p>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="section-title reveal">Ready to actually<br><em>master</em> something?</div>
+  <p class="cta-sub reveal">No signup. No credit card. Just start learning.</p>
+  <a href="https://mastermind-one-pi.vercel.app" class="btn-primary reveal">Open MasterMind Free →</a>
+  <p class="cta-free reveal">No credit card required to start · Cancel anytime</p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">MasterMind.</div>
+  <div><a href="https://mastermind-one-pi.vercel.app">Open App</a> · <a href="#pricing">Pricing</a></div>
+  <div>© 2026 MasterMind</div>
+</footer>
+
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
