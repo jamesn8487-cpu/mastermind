@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>MasterMind</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:     #f7f5f0;
+  --s1:     #ffffff;
+  --s2:     #f2f0eb;
+  --s3:     #eceae4;
+  --border: #dedad2;
+  --border2:#ccc9c0;
+  --gold:   #1a1a1a;
+  --gold2:  #333333;
+  --goldg:  rgba(26,26,26,0.06);
+  --cream:  #1a1a1a;
+  --text:   #2a2a2a;
+  --muted:  #8a8880;
+  --muted2: #aaa8a0;
+  --danger: #b83c2a;
+  --ok:     #2e7d4a;
+  --warn:   #9a6a10;
+  --sw:     260px;
+}
+
+/* ── DARK MODE ── */
+body.dark {
+  --bg:     #141414;
+  --s1:     #1e1e1e;
+  --s2:     #252525;
+  --s3:     #2e2e2e;
+  --border: #333333;
+  --border2:#444444;
+  --gold:   #e8e4dc;
+  --gold2:  #c8c4bc;
+  --goldg:  rgba(232,228,220,0.07);
+  --cream:  #e8e4dc;
+  --text:   #d4d0c8;
+  --muted:  #777068;
+  --muted2: #5a5650;
+  --danger: #e06050;
+  --ok:     #4fa870;
+  --warn:   #c48a28;
+}
+body.dark .topbar { background:rgba(20,20,20,.92); }
+body.dark body::after { opacity:.2; }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); overflow:hidden; font-size:14px; }
+
+/* subtle paper texture */
+body::after {
+  content:''; position:fixed; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:0; opacity:.5;
+}
+
+#app { display:flex; height:100vh; position:relative; z-index:1; }
+
+/* ── LEFT NAV ── */
+#nav {
+  width: var(--sw);
+  flex-shrink:0;
+  background: var(--s1);
+  border-right: 1px solid var(--border);
+  display:flex; flex-direction:column;
+  height:100vh; overflow:hidden;
+  transition: width .25s ease;
+}
+#nav.col { width:52px; }
+
+.nav-brand {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  flex-shrink:0;
+}
+.nav-brand-name {
+  font-family:'EB Garamond', serif;
+  font-size:22px; font-weight:500;
+  color:var(--cream); letter-spacing:-.3px;
+}
+.nav-brand-dot { color:var(--gold); }
+#nav.col .nav-brand-name { display:none; }
+
+.nav-toggle {
+  background:none; border:none; color:var(--muted);
+  cursor:pointer; font-size:16px; padding:2px;
+  transition:color .15s;
+}
+.nav-toggle:hover { color:var(--text); }
+
+/* streak */
+.nav-streak {
+  margin:14px 14px 0;
+  padding:12px 14px;
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:6px;
+  display:flex; align-items:center; gap:10px;
+  flex-shrink:0;
+}
+#nav.col .nav-streak { margin:10px 6px 0; padding:8px; justify-content:center; }
+.ns-flame { font-size:18px; }
+.ns-info { flex:1; }
+.ns-count { font-size:18px; font-weight:600; color:var(--text); font-family:'EB Garamond',serif; line-height:1; }
+.ns-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-top:1px; }
+#nav.col .ns-info { display:none; }
+.ns-goal { font-size:10px; color:var(--muted); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+#nav.col .ns-goal { display:none; }
+
+.nav-goal-bar { margin:8px 14px 0; flex-shrink:0; }
+#nav.col .nav-goal-bar { display:none; }
+.ngb-lbl { font-size:10px; color:var(--muted); display:flex; justify-content:space-between; margin-bottom:5px; }
+.ngb-track { height:2px; background:var(--border2); border-radius:1px; overflow:hidden; }
+.ngb-fill { height:100%; background:var(--gold); border-radius:1px; transition:width .5s ease; }
+
+/* search */
+.nav-search-wrap { padding:12px 14px 6px; flex-shrink:0; }
+#nav.col .nav-search-wrap { display:none; }
+.nav-search {
+  width:100%; background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:5px; padding:7px 11px;
+  color:var(--text); font-family:'Inter',sans-serif; font-size:12px;
+  transition:border-color .15s;
+}
+.nav-search:focus { outline:none; border-color:var(--gold); }
+.nav-search::placeholder { color:var(--muted); }
+
+/* review badge */
+.nav-review { padding:5px 14px; flex-shrink:0; }
+#nav.col .nav-review { padding:5px 7px; }
+.rev-badge {
+  display:flex; align-items:center; gap:8px;
+  background:rgba(154,106,16,.08);
+  border:1px solid rgba(154,106,16,.25);
+  border-radius:5px; padding:7px 11px;
+  cursor:pointer; transition:all .15s;
+}
+.rev-badge:hover { background:rgba(154,106,16,.14); }
+.rev-ico { font-size:13px; }
+.rev-txt { font-size:11px; font-weight:600; color:var(--warn); flex:1; }
+.rev-cnt { font-size:10px; background:rgba(154,106,16,.12); color:var(--warn); padding:1px 6px; border-radius:3px; }
+#nav.col .rev-txt, #nav.col .rev-cnt { display:none; }
+#nav.col .rev-badge { justify-content:center; padding:8px; }
+
+/* nav sections */
+.nav-sec-lbl {
+  font-size:10px; color:var(--muted);
+  text-transform:uppercase; letter-spacing:1px;
+  padding:10px 14px 5px; flex-shrink:0;
+}
+#nav.col .nav-sec-lbl { display:none; }
+
+.sort-row { display:flex; gap:4px; padding:0 14px 8px; flex-shrink:0; }
+#nav.col .sort-row { display:none; }
+.srt-btn {
+  flex:1; padding:5px 4px; font-size:10px; font-family:'Inter',sans-serif;
+  background:none; border:1px solid var(--border);
+  border-radius:4px; color:var(--muted); cursor:pointer; transition:all .12s;
+}
+.srt-btn.act { background:var(--s3); border-color:var(--border2); color:var(--text); }
+.srt-btn:hover:not(.act) { border-color:var(--border2); color:var(--text); }
+
+.nav-new {
+  margin:0 14px 8px;
+  padding:8px 12px;
+  background:none;
+  border:1px solid var(--border2);
+  border-radius:5px; color:var(--gold);
+  font-family:'Inter',sans-serif; font-size:12px; font-weight:500;
+  cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; gap:7px;
+  flex-shrink:0;
+}
+.nav-new:hover { background:var(--goldg); border-color:var(--border2); }
+#nav.col .nav-new { margin:0 6px 8px; padding:8px; justify-content:center; width:38px; height:38px; border-radius:50%; }
+#nav.col .nav-new span:last-child { display:none; }
+
+/* subject list */
+.sub-list { flex:1; overflow-y:auto; padding:0 8px 20px; }
+#nav.col .sub-list { padding:0 4px 20px; }
+.sc {
+  padding:9px 10px; border-radius:5px;
+  margin-bottom:1px; cursor:pointer;
+  border:1px solid transparent;
+  transition:all .12s; position:relative;
+}
+.sc:hover { background:var(--s2); border-color:var(--border); }
+.sc.act { background:var(--s2); border-color:var(--border2); }
+#nav.col .sc { padding:8px; display:flex; justify-content:center; }
+.sc-ico { font-size:15px; margin-bottom:2px; display:block; }
+#nav.col .sc-ico { margin:0; }
+.sc-name { font-size:12px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+#nav.col .sc-name, #nav.col .sc-meta { display:none; }
+.sc-meta { display:flex; gap:4px; flex-wrap:wrap; }
+.sc-tag {
+  font-size:9px; padding:1px 5px; border-radius:3px;
+  background:var(--s3); color:var(--muted);
+  font-family:'Inter',sans-serif; letter-spacing:.3px;
+}
+.sc-tag.gld { background:rgba(26,26,26,.08); color:var(--text); }
+.sc-tag.grn { background:rgba(90,154,106,.1); color:var(--ok); }
+.sc-tag.org { background:rgba(154,106,16,.08); color:var(--warn); }
+.sc-del {
+  position:absolute; right:7px; top:50%; transform:translateY(-50%);
+  display:none; background:none; border:none; color:var(--muted2);
+  cursor:pointer; font-size:12px; transition:color .1s;
+}
+.sc:hover .sc-del { display:block; }
+.sc-del:hover { color:var(--danger); }
+
+/* ── TOPBAR ── */
+#main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+.topbar {
+  padding:14px 28px;
+  border-bottom:1px solid var(--border);
+  background:rgba(247,245,240,.92); backdrop-filter:blur(12px);
+  display:flex; align-items:center; gap:16px; flex-shrink:0;
+}
+.tb-ham { display:none; background:none; border:1px solid var(--border); color:var(--muted); width:28px; height:28px; border-radius:4px; cursor:pointer; font-size:13px; align-items:center; justify-content:center; }
+.tb-title { font-family:'EB Garamond',serif; font-size:20px; font-weight:500; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px; }
+.tb-prog { flex:1; max-width:320px; display:flex; align-items:center; gap:10px; }
+.prog-wrap { flex:1; }
+.prog-lbl { font-size:10px; color:var(--muted); display:flex; justify-content:space-between; margin-bottom:4px; }
+.prog-bar { height:1px; background:var(--border2); }
+.prog-fill { height:100%; background:var(--gold); transition:width .6s ease; }
+.tb-stars { font-size:13px; color:var(--gold); white-space:nowrap; }
+.tb-acts { display:flex; gap:6px; margin-left:auto; }
+.tb-btn {
+  background:none; border:1px solid var(--border);
+  color:var(--muted); padding:5px 11px;
+  border-radius:4px; font-family:'Inter',sans-serif;
+  font-size:11px; cursor:pointer; transition:all .12s;
+}
+.tb-btn:hover { border-color:var(--border2); color:var(--text); }
+.tb-btn.on { border-color:var(--text); color:var(--text); }
+
+/* ── SCREENS ── */
+#content { flex:1; display:flex; overflow:hidden; }
+.scr { display:none; width:100%; height:100%; }
+.scr.on { display:flex; }
+
+/* ── HOME ── */
+#home-scr {
+  flex-direction:column; align-items:center; justify-content:center;
+  padding:60px 40px; gap:14px;
+}
+.home-greeting {
+  font-family:'EB Garamond',serif;
+  font-size:clamp(40px,6vw,72px);
+  font-weight:400; color:var(--cream);
+  text-align:center; line-height:1;
+  letter-spacing:-.5px;
+}
+.home-motto { font-family:"EB Garamond",serif; font-size:18px; font-style:italic; color:var(--muted); letter-spacing:.2px; margin-top:4px; }
+.home-sub { font-size:13px; color:var(--muted2); max-width:360px; text-align:center; line-height:1.8; }
+.home-cta {
+  margin-top:8px;
+  padding:11px 32px;
+  background:var(--text); color:var(--bg);
+  border:none; border-radius:4px;
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+  cursor:pointer; transition:all .2s;
+}
+.home-cta:hover { background:#444; transform:translateY(-1px); }
+
+/* ── LESSON ── */
+#lesson-scr { flex:1; overflow:hidden; }
+.lesson-layout { display:flex; width:100%; height:100%; }
+.lesson-panel { flex:1; overflow-y:auto; padding:36px 44px 80px; display:flex; flex-direction:column; gap:20px; }
+
+/* topic rail */
+.topic-rail {
+  width:210px; flex-shrink:0;
+  border-left:1px solid var(--border);
+  background:var(--s1);
+  padding:20px 10px; overflow-y:auto;
+  display:flex; flex-direction:column; gap:1px;
+}
+.tr-lbl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; padding:0 8px; margin-bottom:10px; }
+.tr-it {
+  padding:8px 10px; border-radius:4px;
+  font-size:11px; font-weight:500;
+  display:flex; align-items:center; gap:8px;
+  border:1px solid transparent; transition:all .12s;
+  color:var(--muted);
+}
+.tr-it.act { background:var(--s3); border-color:var(--border2); color:var(--text); }
+.tr-it.done { color:var(--ok); }
+.tr-it.lk { opacity:.3; }
+.tr-it.weak { color:var(--warn); }
+.tr-dot { width:5px; height:5px; border-radius:50%; background:var(--border2); flex-shrink:0; }
+.tr-it.act .tr-dot { background:var(--gold); }
+.tr-it.done .tr-dot { background:var(--ok); }
+.tr-it.weak .tr-dot { background:var(--warn); }
+.tr-pct { margin-left:auto; font-size:9px; color:var(--muted); }
+
+/* other screens */
+#review-scr, #prog-scr { flex-direction:column; overflow-y:auto; padding:40px 48px; gap:24px; }
+.ps-title { font-family:'EB Garamond',serif; font-size:32px; font-weight:400; color:var(--cream); }
+.ps-sub { font-size:12px; color:var(--muted); }
+.ps-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; width:100%; }
+.ps-card { background:var(--s1); border:1px solid var(--border); border-radius:6px; padding:20px; }
+.ps-card-hd { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.ps-card-ico { font-size:18px; }
+.ps-card-name { font-size:14px; font-weight:500; flex:1; }
+.ps-card-m { font-family:'EB Garamond',serif; font-size:22px; color:var(--text); }
+.ps-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.ps-rname { font-size:11px; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--muted); }
+.ps-rbar { flex:1; height:2px; background:var(--border2); max-width:90px; }
+.ps-rfill { height:100%; }
+.ps-rpct { font-size:9px; color:var(--muted); width:26px; text-align:right; }
+.chart-wrap { background:var(--s1); border:1px solid var(--border); border-radius:6px; padding:20px; width:100%; }
+.chart-title { font-size:13px; font-weight:500; margin-bottom:16px; color:var(--text); }
+.chart-bars { display:flex; align-items:flex-end; gap:8px; height:88px; }
+.chart-col { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; }
+.chart-bar { width:100%; background:var(--text); opacity:.15; border-radius:2px 2px 0 0; min-height:3px; transition:height .5s ease; }
+.chart-x { font-size:10px; color:var(--muted); }
+.rq-item { background:var(--s1); border:1px solid var(--border); border-radius:6px; padding:14px 18px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:all .12s; }
+.rq-item:hover { border-color:var(--gold); background:var(--s2); }
+.rq-ico { font-size:18px; }
+.rq-name { font-size:13px; font-weight:500; margin-bottom:3px; }
+.rq-meta { font-size:11px; color:var(--muted); }
+.rq-due { font-size:10px; padding:2px 8px; border-radius:3px; white-space:nowrap; }
+.rq-due.od { background:rgba(192,97,74,.15); color:var(--danger); }
+.rq-due.td { background:rgba(154,106,16,.1); color:var(--warn); }
+
+/* ── MESSAGES ── */
+.msg { display:flex; gap:12px; animation:fadeUp .3s ease; max-width:740px; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+.msg-av {
+  width:28px; height:28px; border-radius:4px;
+  flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  font-size:13px; margin-top:3px;
+}
+.msg.tutor .msg-av { background:var(--s3); border:1px solid var(--border); }
+.msg.user .msg-av { background:var(--s3); border:1px solid var(--border); }
+.msg.user { flex-direction:row-reverse; margin-left:auto; }
+.msg-bbl {
+  background:var(--s1); border:1px solid var(--border);
+  border-radius:6px; padding:16px 20px;
+  flex:1; line-height:1.8; font-size:13.5px;
+  position:relative; color:var(--text);
+}
+.msg.user .msg-bbl { background:var(--s3); border-color:var(--border); }
+.msg-bbl h2 { font-family:'EB Garamond',serif; font-size:20px; font-weight:500; color:var(--cream); margin-bottom:10px; }
+.msg-bbl h3 { font-family:'EB Garamond',serif; font-size:16px; font-weight:500; color:var(--gold2); margin:14px 0 6px; }
+.msg-bbl p { margin-bottom:9px; color:var(--text); }
+.msg-bbl p:last-child { margin-bottom:0; }
+.msg-bbl code { background:var(--s3); padding:2px 6px; border-radius:3px; font-family:'Courier New',monospace; font-size:12px; color:var(--gold2); }
+.msg-bbl pre { background:var(--bg); border:1px solid var(--border); border-radius:5px; padding:14px; overflow-x:auto; margin:10px 0; font-family:'Courier New',monospace; font-size:12px; line-height:1.6; color:var(--cream); }
+.msg-bbl ul, .msg-bbl ol { padding-left:18px; margin:6px 0; }
+.msg-bbl li { margin-bottom:4px; }
+.msg-bbl strong { color:var(--cream); font-weight:600; }
+.tts-btn { position:absolute; top:10px; right:10px; background:none; border:1px solid var(--border); color:var(--muted2); width:22px; height:22px; border-radius:3px; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center; opacity:0; transition:all .12s; }
+.msg-bbl:hover .tts-btn { opacity:1; }
+.tts-btn:hover { border-color:var(--gold); color:var(--gold); }
+.tts-btn.playing { opacity:1; border-color:var(--gold); color:var(--gold); animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:.5;} 50%{opacity:1;} }
+
+/* ── QUESTION CARD ── */
+.q-card {
+  background:var(--s2); border:1px solid var(--border2);
+  border-left:2px solid var(--text);
+  border-radius:6px; padding:20px 22px; margin-top:4px;
+}
+.q-lbl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+.q-flag-btn { font-size:10px; background:none; border:1px solid var(--border2); color:var(--muted); padding:2px 8px; border-radius:3px; cursor:pointer; transition:all .12s; }
+.q-flag-btn:hover { border-color:var(--danger); color:var(--danger); }
+.q-flag-btn.flagged { border-color:var(--danger); color:var(--danger); background:rgba(192,97,74,.1); }
+.q-txt { font-family:'EB Garamond',serif; font-size:18px; font-weight:400; line-height:1.5; margin-bottom:16px; color:var(--cream); }
+.q-hint-btn { background:none; border:1px solid var(--border2); color:var(--muted); padding:4px 10px; border-radius:3px; font-size:10px; cursor:pointer; transition:all .12s; margin-bottom:10px; display:inline-flex; align-items:center; gap:5px; }
+.q-hint-btn:hover { border-color:var(--warn); color:var(--warn); }
+.q-hint { background:rgba(154,106,16,.07); border:1px solid rgba(154,106,16,.2); border-radius:4px; padding:10px 13px; font-size:12px; color:var(--warn); margin-bottom:10px; display:none; line-height:1.6; }
+.options { display:flex; flex-direction:column; gap:6px; }
+.opt {
+  background:var(--s1); border:1px solid var(--border);
+  border-radius:4px; padding:11px 14px;
+  color:var(--text); font-family:'Inter',sans-serif; font-size:13px;
+  cursor:pointer; text-align:left; display:flex; align-items:center; gap:9px;
+  transition:all .12s;
+}
+.opt:hover:not(:disabled) { border-color:var(--gold); background:var(--goldg); padding-left:18px; }
+.opt.ok { border-color:var(--ok); background:rgba(90,154,106,.08); color:var(--ok); }
+.opt.bad { border-color:var(--danger); background:rgba(192,97,74,.08); color:var(--danger); }
+.opt-l { width:20px; height:20px; border-radius:3px; background:var(--s3); font-size:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--muted); font-family:'Inter',monospace; }
+.open-area { display:flex; flex-direction:column; gap:7px; }
+.open-ta {
+  background:var(--s1); border:1px solid var(--border);
+  border-radius:4px; padding:11px 14px;
+  color:var(--text); font-family:'Inter',sans-serif; font-size:13px;
+  resize:vertical; min-height:72px; width:100%;
+  transition:border-color .15s; line-height:1.6;
+}
+.open-ta:focus { outline:none; border-color:var(--gold); }
+.voice-row { display:flex; gap:7px; align-items:center; }
+.voice-btn {
+  background:none; border:1px solid var(--border2); border-radius:4px;
+  padding:7px 13px; color:var(--muted); font-family:'Inter',sans-serif;
+  font-size:11px; cursor:pointer; transition:all .15s;
+  display:flex; align-items:center; gap:5px;
+}
+.voice-btn:hover { border-color:var(--gold); color:var(--gold); }
+.voice-btn.listening { border-color:var(--danger); color:var(--danger); animation:voicePulse 1s infinite; }
+@keyframes voicePulse { 0%,100%{box-shadow:0 0 0 0 rgba(192,97,74,.3);} 50%{box-shadow:0 0 0 5px rgba(192,97,74,0);} }
+.submit-btn {
+  background:var(--text); border:none; border-radius:4px;
+  padding:9px 20px; color:var(--bg);
+  font-family:'Inter',sans-serif; font-size:12px; font-weight:600;
+  cursor:pointer; transition:all .15s;
+}
+.submit-btn:hover { background:#444; }
+.submit-btn:disabled { opacity:.4; cursor:not-allowed; }
+.conf-row { display:flex; gap:5px; margin-top:9px; align-items:center; }
+.conf-lbl { font-size:10px; color:var(--muted); margin-right:3px; }
+.conf-btn { padding:4px 10px; border-radius:3px; border:1px solid var(--border); background:none; font-size:10px; color:var(--muted); cursor:pointer; transition:all .12s; }
+.conf-btn:hover:not(.sel) { border-color:var(--border2); color:var(--text); }
+.conf-btn.sel.low { border-color:var(--danger); color:var(--danger); background:rgba(192,97,74,.08); }
+.conf-btn.sel.mid { border-color:var(--warn); color:var(--warn); background:rgba(154,106,16,.07); }
+.conf-btn.sel.hi { border-color:var(--ok); color:var(--ok); background:rgba(90,154,106,.08); }
+.post-actions { display:flex; gap:7px; margin-top:10px; flex-wrap:wrap; }
+.pa-btn { padding:5px 12px; border-radius:3px; border:1px solid var(--border); background:none; font-size:10px; color:var(--muted); cursor:pointer; transition:all .12s; }
+.pa-btn:hover { border-color:var(--gold); color:var(--gold); }
+.fb { border-radius:4px; padding:11px 14px; margin-top:8px; font-size:13px; line-height:1.6; }
+.fb.ok { background:rgba(90,154,106,.08); border:1px solid rgba(90,154,106,.25); color:var(--ok); }
+.fb.bad { background:rgba(192,97,74,.08); border:1px solid rgba(192,97,74,.25); color:var(--danger); }
+.fb.mid { background:rgba(154,106,16,.07); border:1px solid rgba(154,106,16,.2); color:var(--warn); }
+
+/* mastery bar */
+.mbar { background:var(--s2); border:1px solid var(--border); border-radius:5px; padding:12px 16px; display:flex; align-items:center; gap:12px; margin-top:4px; }
+.mbar-lbl { font-size:11px; font-weight:500; white-space:nowrap; }
+.mbar-track { flex:1; height:2px; background:var(--border2); }
+.mbar-fill { height:100%; transition:width .9s ease; }
+.mbar-pct { font-size:11px; white-space:nowrap; color:var(--muted); }
+
+/* adaptive notice */
+.adaptive-notice { background:rgba(154,106,16,.06); border:1px solid rgba(154,106,16,.18); border-radius:4px; padding:10px 14px; font-size:12px; color:var(--warn); }
+
+/* celebration */
+.cel-card { background:var(--s2); border:1px solid var(--border2); border-radius:6px; padding:28px; text-align:center; margin-top:4px; }
+.cel-card h2 { font-family:'EB Garamond',serif; font-size:26px; font-weight:400; color:var(--cream); margin:10px 0 6px; }
+.cel-card p { font-size:12px; color:var(--muted); margin-bottom:16px; }
+.cel-star { font-size:28px; animation:starPop .5s ease; display:block; }
+@keyframes starPop { from{transform:scale(0);opacity:0;} to{transform:scale(1);opacity:1;} }
+@keyframes confettiFall { to{transform:translateY(110vh) rotate(720deg);opacity:0;} }
+.cont-btn {
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--text); color:var(--bg);
+  border:none; border-radius:4px;
+  padding:10px 22px; font-family:'Inter',sans-serif;
+  font-size:12px; font-weight:600; cursor:pointer; transition:all .15s;
+}
+.cont-btn:hover { background:#444; transform:translateY(-1px); }
+.cont-btn.sec { background:var(--s3); color:var(--text); border:1px solid var(--border2); }
+.cont-btn.sec:hover { border-color:var(--text); background:var(--s2); }
+.lock-note { background:rgba(192,97,74,.07); border:1px solid rgba(192,97,74,.25); border-radius:4px; padding:11px 14px; font-size:12px; color:var(--danger); margin-top:4px; }
+
+/* typing */
+.typ-row { display:flex; gap:4px; padding:2px 0; }
+.t-d { width:5px; height:5px; border-radius:50%; background:var(--muted); animation:tb 1.1s infinite; }
+.t-d:nth-child(2){animation-delay:.18s;} .t-d:nth-child(3){animation-delay:.36s;}
+@keyframes tb{0%,60%,100%{transform:translateY(0);opacity:.3;}30%{transform:translateY(-5px);opacity:1;}}
+
+/* ── MODAL ── */
+#modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.3); backdrop-filter:blur(6px); z-index:999; align-items:center; justify-content:center; padding:16px; }
+#modal-overlay.on { display:flex; }
+.modal { background:var(--s1); border:1px solid var(--border2); border-radius:8px; padding:32px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; animation:mIn .2s ease; }
+@keyframes mIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+.modal-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
+.modal-title { font-family:'EB Garamond',serif; font-size:22px; font-weight:400; color:var(--cream); }
+.modal-x { background:none; border:1px solid var(--border); color:var(--muted); width:28px; height:28px; border-radius:4px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:all .12s; }
+.modal-x:hover { border-color:var(--danger); color:var(--danger); }
+.fl { margin-bottom:14px; }
+.fl label { font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin-bottom:6px; display:block; }
+.fi { width:100%; background:var(--s2); border:1px solid var(--border); border-radius:4px; padding:10px 13px; color:var(--text); font-family:'Inter',sans-serif; font-size:13px; transition:border-color .15s; }
+.fi:focus { outline:none; border-color:var(--gold); }
+.ico-pick { display:flex; gap:6px; flex-wrap:wrap; }
+.ico-o { width:34px; height:34px; background:var(--s2); border:1px solid var(--border); border-radius:4px; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; transition:all .12s; }
+.ico-o.sel { border-color:var(--text); background:var(--s3); }
+.uz-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+.uz { background:var(--s2); border:1px dashed var(--border2); border-radius:5px; padding:14px 12px; text-align:center; cursor:pointer; position:relative; transition:all .12s; }
+.uz:hover { border-color:var(--gold); background:var(--s3); }
+.uz.filled { border-style:solid; border-color:var(--ok); }
+.uz input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.uz-ico { font-size:18px; margin-bottom:4px; display:block; }
+.uz-title { font-size:11px; font-weight:500; margin-bottom:1px; }
+.uz-hint { font-size:10px; color:var(--muted); }
+.uz-st { font-size:10px; color:var(--ok); margin-top:2px; }
+.pt-btn { font-size:10px; color:var(--gold); cursor:pointer; text-decoration:underline; text-underline-offset:2px; background:none; border:none; display:block; margin:3px auto 0; }
+.pt-area { width:100%; background:var(--s2); border:1px solid var(--border); border-radius:4px; padding:8px 10px; color:var(--text); font-family:'Inter',sans-serif; font-size:11px; resize:vertical; min-height:60px; margin-top:6px; transition:border-color .15s; }
+.pt-area:focus { outline:none; border-color:var(--gold); }
+.quick-note { background:rgba(26,26,26,.05); border:1px solid rgba(26,26,26,.15); border-radius:4px; padding:10px 13px; font-size:12px; color:var(--muted); margin-bottom:14px; }
+.modal-ft { display:flex; justify-content:flex-end; gap:8px; margin-top:22px; }
+.btn-c { padding:9px 20px; background:none; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-family:'Inter',sans-serif; font-size:12px; cursor:pointer; transition:all .12s; }
+.btn-c:hover { border-color:var(--border2); color:var(--text); }
+.btn-ok { padding:9px 22px; background:var(--text); border:none; border-radius:4px; color:var(--bg); font-family:'Inter',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; }
+.btn-ok:hover { background:#444; }
+
+/* goal modal */
+#goal-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.25); backdrop-filter:blur(5px); z-index:998; align-items:center; justify-content:center; }
+#goal-modal.on { display:flex; }
+.gm-box { background:var(--s1); border:1px solid var(--border2); border-radius:8px; padding:28px; width:90%; max-width:320px; }
+.gm-title { font-family:'EB Garamond',serif; font-size:20px; font-weight:400; color:var(--cream); margin-bottom:6px; }
+.gm-sub { font-size:12px; color:var(--muted); margin-bottom:16px; }
+.gm-opts { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:18px; }
+.gm-opt { padding:8px 16px; border-radius:4px; border:1px solid var(--border); background:none; font-family:'EB Garamond',serif; font-size:16px; color:var(--muted); cursor:pointer; transition:all .12s; }
+.gm-opt.sel { border-color:var(--text); color:var(--text); background:var(--s3); }
+.gm-ft { display:flex; justify-content:flex-end; }
+
+/* loading */
+#lo { display:none; position:fixed; inset:0; background:rgba(247,245,240,.92); backdrop-filter:blur(10px); z-index:998; align-items:center; justify-content:center; flex-direction:column; gap:18px; }
+#lo.on { display:flex; }
+.lo-spin { width:36px; height:36px; border:2px solid var(--border2); border-top-color:var(--gold); border-radius:50%; animation:spin .75s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg);} }
+.lo-txt { font-size:12px; color:var(--muted); animation:pulse 2s infinite; font-style:italic; font-family:'EB Garamond',serif; font-size:15px; }
+@keyframes pulse { 0%,100%{opacity:.4;} 50%{opacity:1;} }
+
+/* ── MODEL SELECTOR ── */
+.model-sel { display:flex; gap:4px; align-items:center; margin-right:4px; }
+.model-opt { padding:4px 9px; border-radius:3px; border:1px solid var(--border); background:none; font-family:"Inter",sans-serif; font-size:10px; color:var(--muted); cursor:pointer; transition:all .12s; }
+.model-opt:hover { border-color:var(--border2); color:var(--text); }
+.model-opt.act { border-color:var(--text); color:var(--text); background:var(--s3); }
+.model-lbl { font-size:9px; color:var(--muted2); text-transform:uppercase; letter-spacing:.8px; }
+
+/* ── KEYBOARD HINT ── */
+.kbd { display:inline-block; background:var(--s3); border:1px solid var(--border2); border-radius:3px; padding:1px 5px; font-size:9px; color:var(--muted); font-family:"Inter",monospace; }
+
+/* ── FLASHCARD MODE ── */
+#flash-scr { flex-direction:column; align-items:center; justify-content:flex-start; padding:40px 24px; gap:20px; overflow-y:auto; }
+.flash-header { display:flex; align-items:center; gap:12px; width:100%; max-width:560px; }
+.flash-back { background:none; border:1px solid var(--border); color:var(--muted); padding:6px 13px; border-radius:4px; font-family:'Inter',sans-serif; font-size:11px; cursor:pointer; transition:all .12s; }
+.flash-back:hover { border-color:var(--border2); color:var(--text); }
+.flash-title { font-family:'EB Garamond',serif; font-size:20px; font-weight:400; color:var(--cream); flex:1; }
+.flash-counter { font-size:11px; color:var(--muted); }
+.flash-deck { width:100%; max-width:560px; perspective:1200px; }
+.flash-card {
+  width:100%; min-height:280px; position:relative;
+  cursor:pointer; transform-style:preserve-3d;
+  transition:transform .5s cubic-bezier(.4,0,.2,1);
+}
+.flash-card.flipped { transform:rotateY(180deg); }
+.flash-face {
+  position:absolute; inset:0;
+  background:var(--s1); border:1px solid var(--border2);
+  border-radius:8px; padding:36px 32px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  text-align:center; gap:14px;
+}
+.flash-face.back { transform:rotateY(180deg); }
+.flash-face-lbl { font-size:9px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); }
+.flash-face-txt { font-family:'EB Garamond',serif; font-size:22px; font-weight:400; color:var(--cream); line-height:1.5; }
+.flash-face.back { background:var(--s2); }
+.flash-face.back .flash-face-txt { font-size:16px; font-family:'Inter',sans-serif; color:var(--text); line-height:1.7; }
+.flash-tap { font-size:10px; color:var(--muted2); }
+.flash-nav { display:flex; gap:10px; align-items:center; width:100%; max-width:560px; justify-content:center; }
+.flash-nav-btn { background:var(--s1); border:1px solid var(--border2); color:var(--text); padding:9px 22px; border-radius:4px; font-family:'Inter',sans-serif; font-size:12px; font-weight:500; cursor:pointer; transition:all .15s; }
+.flash-nav-btn:hover:not(:disabled) { background:var(--s2); border-color:var(--border2); transform:translateY(-1px); }
+.flash-nav-btn:disabled { opacity:.3; cursor:not-allowed; }
+.flash-prog { flex:1; height:2px; background:var(--border2); border-radius:1px; overflow:hidden; }
+.flash-prog-fill { height:100%; background:var(--gold); border-radius:1px; transition:width .4s ease; }
+
+/* ── NOTES PANEL ── */
+.notes-toggle {
+  position:fixed; bottom:24px; right:24px; z-index:90;
+  background:var(--text); color:var(--bg);
+  border:none; border-radius:50%; width:42px; height:42px;
+  font-size:16px; cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,.18);
+  display:none; align-items:center; justify-content:center;
+  transition:all .2s;
+}
+.notes-toggle:hover { transform:scale(1.1); }
+.notes-toggle.has-note { background:var(--warn); }
+#notes-panel {
+  position:fixed; bottom:0; right:0; z-index:88;
+  width:320px; max-height:480px;
+  background:var(--s1); border:1px solid var(--border2);
+  border-radius:8px 8px 0 0; border-bottom:none;
+  box-shadow:0 -4px 24px rgba(0,0,0,.12);
+  display:none; flex-direction:column;
+  transform:translateY(100%); transition:transform .3s ease;
+}
+#notes-panel.open { transform:translateY(0); }
+.notes-hd { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.notes-hd-title { font-family:'EB Garamond',serif; font-size:16px; font-weight:400; color:var(--cream); flex:1; }
+.notes-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; line-height:1; transition:color .12s; }
+.notes-close:hover { color:var(--text); }
+.notes-ta {
+  flex:1; background:transparent; border:none; resize:none;
+  padding:16px 18px; color:var(--text);
+  font-family:'Inter',sans-serif; font-size:13px; line-height:1.7;
+  min-height:220px; outline:none;
+}
+.notes-ta::placeholder { color:var(--muted2); }
+.notes-ft { padding:10px 18px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+.notes-saved { font-size:10px; color:var(--ok); opacity:0; transition:opacity .3s; }
+.notes-saved.show { opacity:1; }
+.notes-clear { font-size:10px; color:var(--muted); background:none; border:none; cursor:pointer; text-decoration:underline; text-underline-offset:2px; transition:color .12s; }
+.notes-clear:hover { color:var(--danger); }
+
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  body { overflow:auto; }
+  #app { flex-direction:column; height:auto; min-height:100vh; }
+  #nav { width:100%!important; height:auto; border-right:none; border-bottom:1px solid var(--border); max-height:56px; overflow:hidden; transition:max-height .3s ease; }
+  #nav.mob-open { max-height:100vh; }
+  .nav-brand { padding:14px 16px; }
+  .nav-toggle { display:none; }
+  .tb-ham { display:flex; }
+  #main { flex:1; }
+  .lesson-layout { flex-direction:column; }
+  .topic-rail { width:100%; height:auto; border-left:none; border-top:1px solid var(--border); flex-direction:row; flex-wrap:wrap; padding:8px 12px; gap:4px; }
+  .tr-lbl { display:none; }
+  .tr-it { padding:4px 9px; font-size:10px; }
+  .lesson-panel { padding:16px 16px 80px; }
+  .topbar { padding:10px 14px; }
+  .tb-title { max-width:140px; font-size:17px; }
+  .tb-prog { display:none!important; }
+  #review-scr, #prog-scr { padding:24px 16px; }
+  .ps-grid { grid-template-columns:1fr; }
+  .msg { max-width:100%; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- LEFT NAV -->
+<div id="nav">
+  <div class="nav-brand">
+    <span class="nav-brand-name">MasterMind<span class="nav-brand-dot">.</span></span>
+    <button class="nav-toggle" onclick="toggleNav()">‹</button>
+  </div>
+  <!-- streak -->
+  <div class="nav-streak" id="ns">
+    <span class="ns-flame">🔥</span>
+    <div class="ns-info">
+      <div class="ns-count" id="streak-n">0</div>
+      <div class="ns-label">day streak</div>
+    </div>
+    <span class="ns-goal" onclick="openGoalModal()">set goal</span>
+  </div>
+  <div class="nav-goal-bar">
+    <div class="ngb-lbl"><span>This week</span><span id="goal-lbl">0 / 3 sessions</span></div>
+    <div class="ngb-track"><div class="ngb-fill" id="goal-fill" style="width:0%"></div></div>
+  </div>
+  <!-- review -->
+  <div class="nav-review" id="rev-wrap" style="display:none">
+    <div class="rev-badge" onclick="openReview()">
+      <span class="rev-ico">↻</span>
+      <span class="rev-txt">Review Due</span>
+      <span class="rev-cnt" id="rev-cnt">0</span>
+    </div>
+  </div>
+  <div class="nav-search-wrap">
+    <input class="nav-search" id="nav-search" placeholder="Search subjects…" oninput="renderSubList()">
+  </div>
+  <div class="nav-sec-lbl">Sort</div>
+  <div class="sort-row">
+    <button class="srt-btn act" onclick="setSort('recent',this)">Recent</button>
+    <button class="srt-btn" onclick="setSort('name',this)">A–Z</button>
+    <button class="srt-btn" onclick="setSort('mastery',this)">Mastery</button>
+  </div>
+  <button class="nav-new" onclick="openModal()"><span>+</span><span>New Subject</span></button>
+  <div class="sub-list" id="sub-list"></div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <button class="tb-ham" onclick="toggleMobNav()">☰</button>
+    <div class="tb-title" id="tb-title">MasterMind.</div>
+    <div class="tb-prog" id="tb-prog" style="display:none">
+      <div class="prog-wrap">
+        <div class="prog-lbl"><span id="prog-lbl">Topic 1</span><span id="prog-pct">0%</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      </div>
+      <div class="tb-stars" id="tb-stars">◇◇◇</div>
+    </div>
+    <div class="tb-acts">
+      <div class="model-sel" id="model-sel" style="display:none">
+        <span class="model-lbl">Model</span>
+        <button class="model-opt" data-m="haiku" onclick="setModel('haiku')">Haiku</button>
+        <button class="model-opt act" data-m="sonnet" onclick="setModel('sonnet')">Sonnet</button>
+        <button class="model-opt" data-m="opus" onclick="setModel('opus')">Opus</button>
+      </div>
+      <button class="tb-btn" id="btn-tts" onclick="toggleTTS()" style="display:none">♪</button>
+      <button class="tb-btn" id="btn-flash" onclick="openFlashcards()" style="display:none">⊞ Cards</button>
+      <button class="tb-btn" id="btn-prog" onclick="openProg()" style="display:none">Progress</button>
+      <button class="tb-btn" id="btn-exp" onclick="exportPDF()" style="display:none">Export</button>
+      <button class="tb-btn" id="btn-dark" onclick="toggleDark()" title="Toggle dark mode">◑</button>
+    </div>
+  </div>
+
+  <div id="content">
+    <!-- HOME -->
+    <div id="home-scr" class="scr on" style="display:flex">
+      <div class="home-greeting">Good <span id="greeting-time">day</span>.</div>
+      <p class="home-motto">Learn anything. Master everything.</p>
+      <p class="home-sub">Your AI tutor that builds a custom curriculum, teaches it clearly, and drills the exact things you keep getting wrong.</p>
+      <button class="home-cta" onclick="openModal()">Start Learning</button>
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+        <span style="font-size:10px;color:var(--muted2)"><span class="kbd">N</span> new subject</span>
+        <span style="font-size:10px;color:var(--muted2)"><span class="kbd">R</span> review queue</span>
+        <span style="font-size:10px;color:var(--muted2)"><span class="kbd">1–4</span> answer MCQ</span>
+        <span style="font-size:10px;color:var(--muted2)"><span class="kbd">⌘↵</span> submit</span>
+      </div>
+    </div>
+    <!-- LESSON -->
+    <div id="lesson-scr" class="scr" style="display:none;flex:1;overflow:hidden">
+      <div class="lesson-layout">
+        <div class="lesson-panel" id="lesson-panel"></div>
+        <div class="topic-rail" id="topic-rail"><div class="tr-lbl">Topics</div></div>
+      </div>
+    </div>
+    <!-- REVIEW -->
+    <div id="review-scr" class="scr" style="display:none;flex-direction:column;overflow-y:auto;padding:40px 48px;gap:24px">
+      <div>
+        <div class="ps-title">Spaced Review</div>
+        <div class="ps-sub">Topics due for review, based on the forgetting curve.</div>
+      </div>
+      <div id="review-queue" style="display:flex;flex-direction:column;gap:8px;max-width:640px"></div>
+    </div>
+    <!-- PROGRESS -->
+    <div id="prog-scr" class="scr" style="display:none;flex-direction:column;overflow-y:auto;padding:40px 48px;gap:24px">
+      <div><div class="ps-title">Progress</div><div class="ps-sub" id="ps-sub"></div></div>
+      <div id="ps-chart"></div>
+      <div id="ps-weak"></div>
+      <div class="ps-grid" id="ps-grid"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FLASHCARD SCREEN -->
+<div id="flash-scr" class="scr" style="display:none">
+  <div class="flash-header">
+    <button class="flash-back" onclick="closeFlashcards()">← Back</button>
+    <div class="flash-title" id="flash-title">Flashcards</div>
+    <span class="flash-counter" id="flash-counter">1 / 0</span>
+  </div>
+  <div class="flash-deck">
+    <div class="flash-card" id="flash-card" onclick="flipCard()">
+      <div class="flash-face front">
+        <div class="flash-face-lbl">Topic</div>
+        <div class="flash-face-txt" id="flash-front">—</div>
+        <div class="flash-tap">Tap to reveal summary</div>
+      </div>
+      <div class="flash-face back">
+        <div class="flash-face-lbl">Summary</div>
+        <div class="flash-face-txt" id="flash-back">—</div>
+      </div>
+    </div>
+  </div>
+  <div class="flash-nav">
+    <button class="flash-nav-btn" id="flash-prev" onclick="flashNav(-1)" disabled>← Prev</button>
+    <div class="flash-prog"><div class="flash-prog-fill" id="flash-prog-fill" style="width:0%"></div></div>
+    <button class="flash-nav-btn" id="flash-next" onclick="flashNav(1)">Next →</button>
+  </div>
+</div>
+
+<!-- NOTES PANEL -->
+<button class="notes-toggle" id="notes-toggle" onclick="toggleNotes()" title="Topic notes">✎</button>
+<div id="notes-panel">
+  <div class="notes-hd">
+    <div class="notes-hd-title">Notes</div>
+    <button class="notes-close" onclick="toggleNotes()">✕</button>
+  </div>
+  <textarea class="notes-ta" id="notes-ta" placeholder="Jot anything down for this topic…" oninput="saveNote()"></textarea>
+  <div class="notes-ft">
+    <span class="notes-saved" id="notes-saved">Saved</span>
+    <button class="notes-clear" onclick="clearNote()">Clear</button>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">New Subject</div>
+      <button class="modal-x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="quick-note">Quick start — just enter a name. The AI generates a full curriculum without any upload.</div>
+    <div class="fl"><label>Subject Name</label><input type="text" class="fi" id="m-name" placeholder="e.g. Calculus, Python, Roman History…"></div>
+    <div class="fl"><label>Icon</label><div class="ico-pick">
+      <div class="ico-o sel" data-icon="📚" onclick="selIco(this)">📚</div>
+      <div class="ico-o" data-icon="🧮" onclick="selIco(this)">🧮</div>
+      <div class="ico-o" data-icon="💻" onclick="selIco(this)">💻</div>
+      <div class="ico-o" data-icon="⚗️" onclick="selIco(this)">⚗️</div>
+      <div class="ico-o" data-icon="🌍" onclick="selIco(this)">🌍</div>
+      <div class="ico-o" data-icon="🎵" onclick="selIco(this)">🎵</div>
+      <div class="ico-o" data-icon="🏛️" onclick="selIco(this)">🏛️</div>
+      <div class="ico-o" data-icon="🧬" onclick="selIco(this)">🧬</div>
+      <div class="ico-o" data-icon="📐" onclick="selIco(this)">📐</div>
+      <div class="ico-o" data-icon="⚡" onclick="selIco(this)">⚡</div>
+    </div></div>
+    <div class="uz-grid">
+      <div class="uz" id="uz-s"><input type="file" accept=".pdf,.txt,.md" onchange="handleFile(event,'s')"><span class="uz-ico">📑</span><div class="uz-title">Slides / Notes</div><div class="uz-hint">.pdf · .txt · .md</div><div class="uz-st" id="uz-st-s"></div><button class="pt-btn" onclick="togPaste(event,'pa-s')">or paste ↓</button><textarea class="pt-area" id="pa-s" style="display:none" placeholder="Paste slides…"></textarea></div>
+      <div class="uz" id="uz-t"><input type="file" accept=".pdf,.txt,.md" onchange="handleFile(event,'t')"><span class="uz-ico">📖</span><div class="uz-title">Tutorial</div><div class="uz-hint">.pdf · .txt · .md</div><div class="uz-st" id="uz-st-t"></div><button class="pt-btn" onclick="togPaste(event,'pa-t')">or paste ↓</button><textarea class="pt-area" id="pa-t" style="display:none" placeholder="Paste tutorial…"></textarea></div>
+      <div class="uz" id="uz-q"><input type="file" accept=".pdf,.txt,.md" onchange="handleFile(event,'q')"><span class="uz-ico">❓</span><div class="uz-title">Questions</div><div class="uz-hint">.pdf · .txt · .md</div><div class="uz-st" id="uz-st-q"></div><button class="pt-btn" onclick="togPaste(event,'pa-q')">or paste ↓</button><textarea class="pt-area" id="pa-q" style="display:none" placeholder="Paste questions…"></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-c" onclick="closeModal()">Cancel</button>
+      <button class="btn-ok" onclick="createSubject()">Start Learning</button>
+    </div>
+  </div>
+</div>
+
+<!-- GOAL MODAL -->
+<div id="goal-modal">
+  <div class="gm-box">
+    <div class="gm-title">Weekly Goal</div>
+    <div class="gm-sub">How many sessions per week?</div>
+    <div class="gm-opts">
+      <div class="gm-opt" onclick="setGoal(2,this)">2×</div>
+      <div class="gm-opt sel" onclick="setGoal(3,this)">3×</div>
+      <div class="gm-opt" onclick="setGoal(5,this)">5×</div>
+      <div class="gm-opt" onclick="setGoal(7,this)">7×</div>
+    </div>
+    <div class="gm-ft"><button class="btn-ok" onclick="closeGoalModal()">Save</button></div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="lo"><div class="lo-spin"></div><div class="lo-txt" id="lo-txt">Analysing…</div></div>
+
+<script>
+// greeting
+(()=>{const h=new Date().getHours();document.getElementById('greeting-time').textContent=h<12?'morning':h<17?'afternoon':'evening';})();
+
+// ════════════════════════════════════════════
+const DB='mmv5';
+function loadDB(){try{return JSON.parse(localStorage.getItem(DB))||{subjects:[],lastOpened:null,streak:{count:0,lastDate:null},weeklyGoal:{target:3,sessions:[]}};}catch{return{subjects:[],lastOpened:null,streak:{count:0,lastDate:null},weeklyGoal:{target:3,sessions:[]}};}}
+function saveDB(){localStorage.setItem(DB,JSON.stringify(db));}
+let db=loadDB(),curId=null,sortMode='recent',session=null;
+let pendingFiles={s:'',t:'',q:''};
+let ttsMode=false,ttsUtt=null,recognition=null,isListening=false;
+
+// ── INIT ──
+function init(){
+  if(!db.streak)db.streak={count:0,lastDate:null};
+  if(!db.weeklyGoal)db.weeklyGoal={target:3,sessions:[]};
+  // migrate from old DB keys
+  ['mmv4','mmv3','mmv2','mastermind_v2'].forEach(k=>{
+    try{
+      const old=JSON.parse(localStorage.getItem(k));
+      if(old?.subjects?.length&&!db.subjects.length){db.subjects=old.subjects;saveDB();}
+    }catch{}
+  });
+  updateStreak();renderSubList();checkRevBadge();renderStreakUI();
+  if(!db.subjects?.length) showOnboarding();
+  if(db.lastOpened){const s=db.subjects.find(s=>s.id===db.lastOpened);if(s)openSubject(s.id);}
+}
+
+// ── STREAK ──
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function updateStreak(){
+  const s=db.streak,today=todayStr();
+  if(s.lastDate===today)return;
+  const y=new Date();y.setDate(y.getDate()-1);const yStr=y.toISOString().split('T')[0];
+  if(s.lastDate===yStr)s.count=(s.count||0)+1;
+  else s.count=1;
+  s.lastDate=today;
+  if(!db.weeklyGoal.sessions)db.weeklyGoal.sessions=[];
+  if(!db.weeklyGoal.sessions.includes(today))db.weeklyGoal.sessions.push(today);
+  const cut=new Date();cut.setDate(cut.getDate()-7);
+  db.weeklyGoal.sessions=db.weeklyGoal.sessions.filter(d=>new Date(d)>=cut);
+  saveDB();
+}
+function recordSession(){
+  const today=todayStr();
+  if(!db.weeklyGoal.sessions.includes(today))db.weeklyGoal.sessions.push(today);
+  const cut=new Date();cut.setDate(cut.getDate()-7);
+  db.weeklyGoal.sessions=db.weeklyGoal.sessions.filter(d=>new Date(d)>=cut);
+  saveDB();renderStreakUI();
+}
+function renderStreakUI(){
+  document.getElementById('streak-n').textContent=db.streak.count||0;
+  const goal=db.weeklyGoal.target||3,done=db.weeklyGoal.sessions?.length||0;
+  document.getElementById('goal-fill').style.width=Math.min(100,Math.round(done/goal*100))+'%';
+  document.getElementById('goal-lbl').textContent=`${done} / ${goal} sessions`;
+}
+function openGoalModal(){document.getElementById('goal-modal').classList.add('on');}
+function closeGoalModal(){document.getElementById('goal-modal').classList.remove('on');}
+function setGoal(n,el){db.weeklyGoal.target=n;saveDB();renderStreakUI();document.querySelectorAll('.gm-opt').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
+
+// ── SPACED REP ──
+const SR=[864e5,2592e5,6048e5,12096e5,25920e5];
+function schedRev(sub,ti){if(!sub.srData)sub.srData={};const d=sub.srData[ti]||{reviewCount:0};d.lastReviewed=Date.now();d.reviewCount=(d.reviewCount||0)+1;d.nextReview=Date.now()+SR[Math.min(d.reviewCount-1,SR.length-1)];sub.srData[ti]=d;}
+function getDue(sub){if(!sub.srData)return[];return Object.entries(sub.srData).filter(([ti,d])=>d.nextReview&&Date.now()>=d.nextReview&&(sub.topicMastery[ti]||0)>=75).map(([ti,d])=>({topicIndex:parseInt(ti),...d}));}
+function getAllDue(){return db.subjects.flatMap(s=>getDue(s).map(r=>({...r,sub:s})));}
+function checkRevBadge(){const due=getAllDue();const w=document.getElementById('rev-wrap');w.style.display=due.length?'block':'none';document.getElementById('rev-cnt').textContent=due.length;}
+
+// ── ADAPTIVE ──
+function getAdaptiveNext(sub){
+  const unmastered=sub.topics.map((_,i)=>i).filter(i=>sub.topicUnlocked[i]&&(sub.topicMastery[i]||0)<75);
+  if(!unmastered.length)return null;
+  unmastered.sort((a,b)=>(sub.topicMastery[a]||0)-(sub.topicMastery[b]||0));
+  const nat=sub.topics.findIndex((_,i)=>i>=(sub.currentTopic||0)&&sub.topicUnlocked[i]&&(sub.topicMastery[i]||0)<75);
+  const adp=unmastered[0];
+  return{topicIndex:adp,isAdaptive:adp!==nat&&nat!==-1};
+}
+
+// ── CONCEPTS ──
+function recordMissed(sub,ti,q){if(!sub.missedConcepts)sub.missedConcepts={};if(!sub.missedConcepts[ti])sub.missedConcepts[ti]=[];const l=q.substring(0,60);if(!sub.missedConcepts[ti].includes(l))sub.missedConcepts[ti].push(l);if(sub.missedConcepts[ti].length>5)sub.missedConcepts[ti]=sub.missedConcepts[ti].slice(-5);}
+function getMissed(sub,ti){return sub.missedConcepts?.[ti]||[];}
+
+// ── TTS ──
+let ttsMode2=false;
+function toggleTTS(){ttsMode2=!ttsMode2;const b=document.getElementById('btn-tts');b.classList.toggle('on',ttsMode2);b.textContent=ttsMode2?'♪ on':'♪';if(!ttsMode2&&ttsUtt){speechSynthesis.cancel();ttsUtt=null;}}
+function speakEl(html,btn){if(!('speechSynthesis' in window))return;speechSynthesis.cancel();const t=document.createElement('div');t.innerHTML=html;const c=t.textContent.substring(0,2000);ttsUtt=new SpeechSynthesisUtterance(c);ttsUtt.rate=1;if(btn){btn.classList.add('playing');ttsUtt.onend=()=>btn.classList.remove('playing');ttsUtt.onerror=()=>btn.classList.remove('playing');}speechSynthesis.speak(ttsUtt);}
+function autoSpeak(html){if(!ttsMode2)return;const t=document.createElement('div');t.innerHTML=html;const c=t.textContent.substring(0,2000);if(!c.trim())return;speechSynthesis.cancel();ttsUtt=new SpeechSynthesisUtterance(c);ttsUtt.rate=1;speechSynthesis.speak(ttsUtt);}
+
+// ── VOICE ──
+function startVoice(taId,btnId){
+  const ta=document.getElementById(taId),btn=document.getElementById(btnId);if(!ta||!btn)return;
+  if(isListening){stopVoice(btnId);return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('Voice input not supported. Try Chrome.');return;}
+  recognition=new SR();recognition.continuous=false;recognition.interimResults=true;recognition.lang='en-AU';
+  isListening=true;btn.classList.add('listening');btn.textContent='● Stop';
+  recognition.onresult=e=>{let f='',i='';for(let j=e.resultIndex;j<e.results.length;j++){if(e.results[j].isFinal)f+=e.results[j][0].transcript;else i+=e.results[j][0].transcript;}ta.value=f||i;};
+  recognition.onend=()=>stopVoice(btnId);recognition.onerror=()=>stopVoice(btnId);recognition.start();
+}
+function stopVoice(btnId){isListening=false;if(recognition){try{recognition.stop();}catch{}}const b=document.getElementById(btnId);if(b){b.classList.remove('listening');b.textContent='⏺ Speak';}}
+
+// ── NAV ──
+let navCol=false;
+function toggleNav(){navCol=!navCol;const n=document.getElementById('nav');n.classList.toggle('col',navCol);n.querySelector('.nav-toggle').textContent=navCol?'›':'‹';}
+function toggleMobNav(){document.getElementById('nav').classList.toggle('mob-open');}
+function setSort(m,btn){sortMode=m;document.querySelectorAll('.srt-btn').forEach(b=>b.classList.remove('act'));btn.classList.add('act');renderSubList();}
+
+function renderSubList(){
+  const list=document.getElementById('sub-list');
+  const q=(document.getElementById('nav-search').value||'').toLowerCase();
+  let subs=[...db.subjects].filter(s=>!q||s.name.toLowerCase().includes(q));
+  if(sortMode==='name')subs.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(sortMode==='mastery')subs.sort((a,b)=>(b.overallMastery||0)-(a.overallMastery||0));
+  else subs.sort((a,b)=>(b.lastOpened||0)-(a.lastOpened||0));
+  if(!subs.length){list.innerHTML=`<div style="padding:16px 10px;font-size:11px;color:var(--muted);text-align:center;line-height:1.7;font-style:italic">No subjects yet.<br>Create one above.</div>`;return;}
+  list.innerHTML=subs.map(s=>{
+    const m=s.overallMastery||0,tc=(s.topics||[]).length,mc=Object.values(s.topicMastery||{}).filter(x=>x>=75).length,due=getDue(s).length,weak=Object.values(s.topicMastery||{}).filter(x=>x>0&&x<75).length;
+    return`<div class="sc${s.id===curId?' act':''}" id="sc-${s.id}" onclick="openSubject('${s.id}')">
+      <span class="sc-ico">${s.icon}</span>
+      <div class="sc-name">${esc(s.name)}</div>
+      <div class="sc-meta"><span class="sc-tag gld">${m}%</span>${s.totalMins?`<span class="sc-tag">${s.totalMins>=60?Math.round(s.totalMins/60)+'h':s.totalMins+'m'}</span>`:''}${due?`<span class="sc-tag org">↻${due}</span>`:''}${weak?`<span class="sc-tag" style="color:var(--warn)">⚠${weak}</span>`:''}${mc===tc&&tc?`<span class="sc-tag grn">✓</span>`:''}</div>
+      <button class="sc-del" onclick="delSub(event,'${s.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ── MODAL ──
+function openModal(){pendingFiles={s:'',t:'',q:''};document.getElementById('m-name').value='';['s','t','q'].forEach(k=>{document.getElementById(`uz-st-${k}`).textContent='';document.getElementById(`uz-${k}`).classList.remove('filled');document.getElementById(`pa-${k}`).value='';document.getElementById(`pa-${k}`).style.display='none';});document.querySelectorAll('.ico-o').forEach((e,i)=>e.classList.toggle('sel',i===0));document.getElementById('modal-overlay').classList.add('on');setTimeout(()=>document.getElementById('m-name').focus(),100);}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('on');}
+function selIco(el){document.querySelectorAll('.ico-o').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
+function togPaste(e,id){e.stopPropagation();e.preventDefault();const t=document.getElementById(id);t.style.display=t.style.display==='none'?'block':'none';}
+async function handleFile(e,k){const f=e.target.files[0];if(!f)return;pendingFiles[k]=await f.text();document.getElementById(`uz-st-${k}`).textContent=`✓ ${f.name}`;document.getElementById(`uz-${k}`).classList.add('filled');}
+function getContent(){let o='';const m={s:'SLIDES/NOTES',t:'TUTORIAL',q:'PRACTICE QUESTIONS'};Object.entries(m).forEach(([k,l])=>{const c=((pendingFiles[k]||'')+'\n'+(document.getElementById(`pa-${k}`)?.value||'')).trim();if(c)o+=`\n\n=== ${l} ===\n${c}`;});return o.trim();}
+
+async function createSubject(){
+  const name=document.getElementById('m-name').value.trim();if(!name){document.getElementById('m-name').focus();return;}
+  const icon=document.querySelector('.ico-o.sel')?.dataset.icon||'📚';
+  const content=getContent();closeModal();showLoad('Analysing content…');
+  try{
+    setLoadTxt('Building curriculum…');
+    const raw=await callClaude([{role:'user',content:`Analyse this learning material and return JSON.
+${content?'Material:\n'+content.substring(0,12000):`Topic: "${name}" — generate a good learning curriculum.`}
+Return ONLY valid JSON:
+{"topics":[{"title":"Topic name","summary":"1-2 sentences","estimatedMins":5}]}
+Create 3-8 logical sequential topics. estimatedMins: 3-15.`}],800,true);
+    let parsed;try{parsed=JSON.parse(raw);}catch{const m=raw.match(/\{[\s\S]*\}/);parsed=m?JSON.parse(m[0]):null;}
+    const topics=parsed?.topics?.length?parsed.topics:[{title:'Main Content',summary:'Uploaded material',estimatedMins:5}];
+    const id='sub_'+Date.now();
+    const sub={id,name,icon,content:content||`[AI:${name}]`,topics,topicMastery:{},topicAttempts:{},topicCorrect:{},topicUnlocked:{0:true},currentTopic:0,overallMastery:0,createdAt:Date.now(),lastOpened:Date.now(),conversationHistory:[],savedMessages:[],srData:{},missedConcepts:{},flaggedQuestions:[]};
+    topics.forEach((_,i)=>{sub.topicMastery[i]=0;});
+    db.subjects.push(sub);db.lastOpened=id;saveDB();hideLoad();renderSubList();await openSubject(id);
+  }catch(err){hideLoad();showAPIError('Failed to connect. Make sure server.js is running and your API key is set.');console.error(err);}
+}
+
+// ── OPEN / DELETE ──
+async function openSubject(id){
+  const sub=db.subjects.find(s=>s.id===id);if(!sub)return;
+  if(curId&&curId!==id){trackTime(curId);}
+  sub.lastOpened=Date.now();sub._sessionStart=Date.now();db.lastOpened=id;curId=id;
+  recordSession();saveDB();renderSubList();checkRevBadge();
+  document.getElementById('tb-title').textContent=`${sub.icon} ${sub.name}`;
+  document.getElementById('tb-prog').style.display='flex';
+  ['btn-prog','btn-exp','btn-tts','btn-flash'].forEach(i=>document.getElementById(i).style.display='inline-flex');
+  document.getElementById('model-sel').style.display='flex';
+  const curM=localStorage.getItem('mm_model')||'sonnet';document.querySelectorAll('.model-opt').forEach(b=>b.classList.toggle('act',b.dataset.m===curM));
+  const nt=document.getElementById('notes-toggle');nt.style.display='flex';loadNote();
+  showScr('lesson');
+  session={subject:sub,questionsPerTopic:3,masteryThreshold:75,isReview:false};
+  updateProgUI();buildRail();
+  const panel=document.getElementById('lesson-panel');
+  if(!sub.conversationHistory?.length){panel.innerHTML='';await teachTopic(sub.currentTopic||0);}
+  else{
+    panel.innerHTML='';(sub.savedMessages||[]).forEach(m=>appendHTML(m.role,m.html));panel.scrollTop=panel.scrollHeight;
+    const ct=sub.currentTopic||0,mastery=sub.topicMastery[ct]||0;
+    if(mastery<session.masteryThreshold){addMsg('tutor',`<p style="color:var(--warn)">Welcome back. Resuming <em>${esc(sub.topics[ct]?.title)}</em> — ${mastery}% mastery so far.</p>`);await askQ(ct);}
+    else{const next=getAdaptiveNext(sub);if(next){const notice=next.isAdaptive?`<div class="adaptive-notice">Adaptive routing — heading to <em>${esc(sub.topics[next.topicIndex]?.title)}</em> first to address your weak spot.</div>`:'';addMsg('tutor',`${notice}<p style="color:var(--warn)">Welcome back. Ready to continue?</p><button class="cont-btn" onclick="teachTopic(${next.topicIndex})" style="margin-top:10px">Continue →</button>`);}}
+  }
+}
+
+function delSub(e,id){e.stopPropagation();if(!confirm('Delete this subject and all progress?'))return;db.subjects=db.subjects.filter(s=>s.id!==id);if(db.lastOpened===id){db.lastOpened=null;curId=null;showScr('home');['tb-prog','btn-prog','btn-exp','btn-tts','btn-flash'].forEach(i=>document.getElementById(i).style.display='none');document.getElementById('notes-toggle').style.display='none';document.getElementById('model-sel').style.display='none';closeNotes();document.getElementById('tb-title').textContent='MasterMind.';}saveDB();renderSubList();checkRevBadge();}
+
+// ── TEACH ──
+async function teachTopic(ti){
+  const sub=getSubject();if(!sub)return;
+  sub.currentTopic=ti;sub.topicAttempts[ti]=0;sub.topicCorrect[ti]=0;sub.topicMastery[ti]=0;
+  sub.conversationHistory=[];saveSubject();updateProgUI();buildRail();loadNote();updateNoteTitle();
+  const typId=showTyping();const topic=sub.topics[ti];const isAI=sub.content.startsWith('[AI:');
+  const missed=getMissed(sub,ti);const missedNote=missed.length?`\nFocus especially on concepts the student struggled with: ${missed.join('; ')}`:'';
+  const prompt=`You are teaching topic ${ti+1}/${sub.topics.length}: "${topic.title}" (subject: "${sub.name}").
+${isAI?`Teach "${topic.title}" from first principles.`:`Source material:\n${sub.content.substring(0,10000)}`}${missedNote}
+Teach thoroughly: core concepts, 1-2 worked examples (code blocks for CS/maths), key points.
+End with "---READY_TO_TEST---" then:
+QUESTION_JSON:{"type":"mcq","question":"...","options":["A: ...","B: ...","C: ...","D: ..."],"correct":"A","explanation":"...","hint":"one-line hint","concept":"short concept label"}`;
+  sub.conversationHistory=[{role:'user',content:prompt}];
+  try{const resp=await callClaude(sub.conversationHistory,2500);sub.conversationHistory.push({role:'assistant',content:resp});saveSubject();removeTyping(typId);parseAndShow(resp,ti);}
+  catch{removeTyping(typId);addMsg('tutor','<p style="color:var(--danger)">Error loading lesson. Please try again.</p>');}
+}
+
+function parseAndShow(resp,ti){
+  const parts=resp.split('---READY_TO_TEST---');
+  addMsg('tutor',fmtTxt(parts[0].trim()),true);
+  const rest=parts[1]||'';
+  const qm=rest.match(/QUESTION_JSON:(\{[\s\S]*?\})\s*$/m);
+  if(qm){try{dispQ(JSON.parse(qm[1]),ti);return;}catch{}}
+  const plain=rest.replace(/QUESTION_JSON:.*$/m,'').trim();if(plain)dispFallback(plain,ti);
+}
+
+// ── QUESTIONS ──
+function dispQ(q,ti){const sub=getSubject();sub._pendingQ=q;saveSubject();const att=sub.topicAttempts[ti]||0;if(q.type==='mcq')renderMCQ(q,ti,att);else renderOpen(q,ti,att);}
+function hHtml(q,uid){if(!q?.hint)return'';return`<button class="q-hint-btn" onclick="showHint('h-${uid}',this)">Show hint</button><div class="q-hint" id="h-${uid}">${esc(q.hint)}</div>`;}
+function cHtml(uid){return`<div class="conf-row" id="cr-${uid}"><span class="conf-lbl">Confidence</span><button class="conf-btn low" onclick="selConf(this,'${uid}','low')">Unsure</button><button class="conf-btn mid" onclick="selConf(this,'${uid}','mid')">Maybe</button><button class="conf-btn hi" onclick="selConf(this,'${uid}','hi')">Sure</button></div>`;}
+function showHint(id,btn){document.getElementById(id).style.display='block';btn.style.display='none';}
+function selConf(btn,uid,level){document.querySelectorAll(`#cr-${uid} .conf-btn`).forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');const sub=getSubject();if(sub)sub._lastConf=level;}
+function fHtml(uid){return`<button class="q-flag-btn" id="fl-${uid}" onclick="flagQ('${uid}')">Flag</button>`;}
+function flagQ(uid){const sub=getSubject();if(!sub)return;const q=sub._pendingQ;if(!q)return;if(!sub.flaggedQuestions)sub.flaggedQuestions=[];sub.flaggedQuestions.push({question:q.question,topicIndex:sub.currentTopic,flaggedAt:Date.now()});saveSubject();const b=document.getElementById(`fl-${uid}`);if(b){b.classList.add('flagged');b.textContent='Flagged';}}
+
+function renderMCQ(q,ti,att){
+  const uid=`${ti}-${att}`;
+  const opts=q.options.map(o=>{const l=o.charAt(0),t=o.substring(3);return`<button class="opt" onclick="answerMCQ(this,'${l}','${q.correct}',${ti})" data-l="${l}"><span class="opt-l">${l}</span>${esc(t)}</button>`;}).join('');
+  addMsg('tutor',`<div class="q-card"><div class="q-lbl"><span>Question ${att+1}</span>${fHtml(uid)}</div><div class="q-txt">${esc(q.question)}</div>${hHtml(q,uid)}<div class="options" id="opts-${uid}">${opts}</div>${cHtml(uid)}<div id="fb-${uid}"></div></div>`);
+}
+function renderOpen(q,ti,att){
+  const uid=`${ti}-${att}`,vid=`v-${uid}`,bid=`vb-${uid}`;
+  addMsg('tutor',`<div class="q-card"><div class="q-lbl"><span>Question ${att+1}</span>${fHtml(uid)}</div><div class="q-txt">${esc(q.question)}</div>${hHtml(q,uid)}<div class="open-area"><textarea class="open-ta" id="${vid}" placeholder="Type your answer…"></textarea>${cHtml(uid)}<div class="voice-row"><button class="voice-btn" id="${bid}" onclick="startVoice('${vid}','${bid}')">⏺ Speak</button><button class="submit-btn" onclick="answerOpen('${uid}','${vid}',${ti})">Submit</button></div></div><div id="fb-${uid}"></div></div>`);
+}
+function dispFallback(text,ti){
+  const att=getSubject()?.topicAttempts[ti]||0,uid=`${ti}-${att}`,vid=`v-${uid}`,bid=`vb-${uid}`;
+  addMsg('tutor',`<div class="q-card"><div class="q-lbl"><span>Question ${att+1}</span>${fHtml(uid)}</div><div class="q-txt">${esc(text)}</div><div class="open-area"><textarea class="open-ta" id="${vid}" placeholder="Type your answer…"></textarea>${cHtml(uid)}<div class="voice-row"><button class="voice-btn" id="${bid}" onclick="startVoice('${vid}','${bid}')">⏺ Speak</button><button class="submit-btn" onclick="answerFallback('${uid}','${vid}',${ti},\`${escTpl(text)}\`)">Submit</button></div></div><div id="fb-${uid}"></div></div>`);
+}
+
+function answerMCQ(btn,sel,correct,ti){
+  const att=getSubject()?.topicAttempts[ti]||0,uid=`${ti}-${att}`;
+  btn.closest('.options').querySelectorAll('.opt').forEach(b=>{b.disabled=true;if(b.dataset.l===correct)b.classList.add('ok');if(b.dataset.l===sel&&sel!==correct)b.classList.add('bad');});
+  const isOk=sel===correct,conf=getSubject()?._lastConf||'mid',q=getSubject()?._pendingQ;
+  if(!isOk&&q)recordMissed(getSubject(),ti,q.concept||q.question);
+  recordAnswer(ti,isOk,false,conf);
+  const expl=q?.explanation||(isOk?'':'Correct answer: '+correct+'.');
+  const fb=document.getElementById(`fb-${uid}`);if(fb)fb.innerHTML=`<div class="fb ${isOk?'ok':'bad'}">${isOk?'Correct.':'Incorrect.'} ${esc(expl)}</div>`;
+  showPostActs(uid,ti);afterAnswer(ti);
+}
+async function answerOpen(uid,vid,ti){
+  const ta=document.getElementById(vid),ans=ta.value.trim();if(!ans)return;
+  stopVoice(`vb-${uid}`);ta.disabled=true;
+  const row=ta.closest('.open-area'),sb=row.querySelector('.submit-btn');sb.disabled=true;sb.textContent='Marking…';
+  const q=getSubject()?._pendingQ,conf=getSubject()?._lastConf||'mid';
+  try{
+    const raw=await callClaude([{role:'user',content:`Mark this. Q: "${q?.question||''}" Key points: ${JSON.stringify(q?.key_points||[])} Answer: "${ans}" Return ONLY JSON: {"score":0-100,"verdict":"correct|partial|wrong","feedback":"brief"}`}],400,true);
+    const m=raw.match(/\{[\s\S]*\}/);const r=m?JSON.parse(m[0]):{score:50,verdict:'partial',feedback:'Assessed.'};
+    const isOk=r.verdict==='correct'||r.score>=70,isMid=r.verdict==='partial'&&r.score>=40;
+    if(!isOk&&q)recordMissed(getSubject(),ti,q.concept||q.question);
+    recordAnswer(ti,isOk,isMid,conf);sb.textContent='Submitted';
+    const fb=document.getElementById(`fb-${uid}`);if(fb)fb.innerHTML=`<div class="fb ${isOk?'ok':isMid?'mid':'bad'}">${isOk?'Correct.':isMid?'Partially correct.':'Incorrect.'} ${esc(r.feedback)}</div>`;
+    showPostActs(uid,ti);afterAnswer(ti);
+  }catch{sb.disabled=false;sb.textContent='Submit';}
+}
+async function answerFallback(uid,vid,ti,question){
+  const ta=document.getElementById(vid),ans=ta.value.trim();if(!ans)return;
+  stopVoice(`vb-${uid}`);ta.disabled=true;
+  const row=ta.closest('.open-area'),sb=row.querySelector('.submit-btn');sb.disabled=true;sb.textContent='Marking…';
+  const sub=getSubject(),conf=sub._lastConf||'mid';
+  try{
+    const raw=await callClaude([{role:'user',content:`Context: ${sub.content.substring(0,3000)} Q: "${question}" Answer: "${ans}" Return ONLY JSON: {"score":0-100,"verdict":"correct|partial|wrong","feedback":"brief"}`}],400,true);
+    const m=raw.match(/\{[\s\S]*\}/);const r=m?JSON.parse(m[0]):{score:50,verdict:'partial',feedback:'Assessed.'};
+    const isOk=r.verdict==='correct'||r.score>=70,isMid=r.verdict==='partial'&&r.score>=40;
+    if(!isOk)recordMissed(sub,ti,question.substring(0,60));
+    recordAnswer(ti,isOk,isMid,conf);sb.textContent='Submitted';
+    const fb=document.getElementById(`fb-${uid}`);if(fb)fb.innerHTML=`<div class="fb ${isOk?'ok':isMid?'mid':'bad'}">${isOk?'Correct.':isMid?'Partially correct.':'Incorrect.'} ${esc(r.feedback)}</div>`;
+    showPostActs(uid,ti);afterAnswer(ti);
+  }catch{sb.disabled=false;sb.textContent='Submit';}
+}
+
+function showPostActs(uid,ti){
+  const fb=document.getElementById(`fb-${uid}`);if(!fb)return;
+  fb.insertAdjacentHTML('beforeend',`<div class="post-actions"><button class="pa-btn" onclick="explainDiff(${ti},this)">Explain differently</button></div>`);
+}
+async function explainDiff(ti,btn){
+  btn.disabled=true;btn.textContent='Loading…';
+  const sub=getSubject();if(!sub)return;const typId=showTyping();
+  const missed=getMissed(sub,ti);
+  const prompt=`The student is struggling with "${sub.topics[ti].title}".${missed.length?` Re-explain these specific concepts: ${missed.join(', ')}.`:''} Use a completely different approach — new examples, different analogy. Do NOT ask a question.`;
+  sub.conversationHistory.push({role:'user',content:prompt});
+  try{
+    const resp=await callClaude(sub.conversationHistory,1400);sub.conversationHistory.push({role:'assistant',content:resp});saveSubject();removeTyping(typId);
+    addMsg('tutor',`<div style="border-left:2px solid var(--border2);padding-left:14px">${fmtTxt(resp)}</div>`,true);
+    addMsg('tutor',`<button class="cont-btn" onclick="askQ(${ti})" style="margin-top:4px">Try another question →</button>`);
+  }catch{removeTyping(typId);}
+}
+
+// ── RECORD / AFTER ──
+function recordAnswer(ti,isOk,isMid,conf){
+  const sub=getSubject();if(!sub)return;
+  sub.topicAttempts[ti]=(sub.topicAttempts[ti]||0)+1;
+  let score=isOk?1:isMid?0.5:0;
+  if(conf==='low'&&isOk)score=0.7;
+  if(conf==='hi'&&!isOk)score=Math.max(0,(sub.topicCorrect[ti]||0)>0?-0.15:0);
+  sub.topicCorrect[ti]=Math.max(0,(sub.topicCorrect[ti]||0)+score);
+  const qpt=session?.questionsPerTopic||3;
+  sub.topicMastery[ti]=Math.min(100,Math.round((sub.topicCorrect[ti]/Math.max(sub.topicAttempts[ti],qpt))*100));
+  updateOverall();saveSubject();updateProgUI();buildRail();
+}
+function updateOverall(){const sub=getSubject();if(!sub)return;const v=sub.topics.map((_,i)=>sub.topicMastery[i]||0);sub.overallMastery=Math.round(v.reduce((a,b)=>a+b,0)/v.length);}
+
+async function afterAnswer(ti){
+  const sub=getSubject();if(!sub)return;
+  const mastery=sub.topicMastery[ti],attempts=sub.topicAttempts[ti],qpt=session.questionsPerTopic;
+  const col=mastery>=75?'var(--ok)':mastery>=40?'var(--warn)':'var(--danger)';
+  const stars=mastery>=75?'◆◆◆':mastery>=40?'◆◆◇':'◆◇◇';
+  addMsg('tutor',`<div class="mbar"><span class="mbar-lbl">Mastery</span><div class="mbar-track"><div class="mbar-fill" style="width:${mastery}%;background:${col}"></div></div><span class="mbar-pct">${mastery}% ${stars}</span></div>`);
+  const hasMastery=mastery>=session.masteryThreshold&&attempts>=qpt;
+  if(hasMastery){
+    if(session.isReview){schedRev(sub,ti);saveSubject();checkRevBadge();renderSubList();addMsg('tutor',`<div class="cel-card"><span class="cel-star">✓</span><h2>Review Complete</h2><p>Next review has been scheduled.</p><button class="cont-btn" onclick="openReview()">Back to queue</button></div>`);}
+    else{const isLast=ti>=sub.topics.length-1;if(isLast)showComplete();else showMastered(ti);}
+  } else if(attempts>=qpt&&mastery<session.masteryThreshold){await reteach(ti,mastery);}
+  else{await askQ(ti);}
+}
+
+async function askQ(ti){
+  const sub=getSubject();if(!sub)return;const typId=showTyping();const topic=sub.topics[ti];const att=sub.topicAttempts[ti]||0;
+  const missed=getMissed(sub,ti);const isAI=sub.content.startsWith('[AI:');
+  const prompt=`Continue testing "${topic.title}". Student: ${sub.topicMastery[ti]}% mastery, ${att} question(s).${missed.length?` Target: ${missed.slice(-2).join(', ')}.`:''}${att>=2?' Increase difficulty.':''}${isAI?' Use your own knowledge.':''}
+QUESTION_JSON:{"type":"mcq","question":"...","options":["A: ...","B: ...","C: ...","D: ..."],"correct":"A","explanation":"...","hint":"...","concept":"..."}`;
+  sub.conversationHistory.push({role:'user',content:prompt});
+  try{
+    const resp=await callClaude(sub.conversationHistory,1200);sub.conversationHistory.push({role:'assistant',content:resp});saveSubject();removeTyping(typId);
+    const qm=resp.match(/QUESTION_JSON:(\{[\s\S]*?\})\s*$/m);
+    if(qm){try{const q=JSON.parse(qm[1]);sub._pendingQ=q;saveSubject();const intro=resp.split('QUESTION_JSON:')[0].trim();if(intro)addMsg('tutor',`<p>${esc(intro)}</p>`);dispQ(q,ti);return;}catch{}}
+    dispFallback(resp.replace(/QUESTION_JSON:.*$/m,'').trim(),ti);
+  }catch{removeTyping(typId);}
+}
+
+async function reteach(ti,mastery){
+  addMsg('tutor',`<div class="lock-note">${mastery}% — ${session.masteryThreshold}% needed to progress. Let's revisit this from a different angle.</div>`);
+  const sub=getSubject();if(!sub)return;const typId=showTyping();const topic=sub.topics[ti];
+  const missed=getMissed(sub,ti);
+  const prompt=`Student got ${mastery}% on "${topic.title}". Re-explain${missed.length?` focusing on: ${missed.join(', ')}`:''}. Use completely different examples. Then ask a fresh question.
+QUESTION_JSON:{"type":"mcq","question":"...","options":["A: ...","B: ...","C: ...","D: ..."],"correct":"A","explanation":"...","hint":"...","concept":"..."}`;
+  sub.conversationHistory.push({role:'user',content:prompt});
+  try{const resp=await callClaude(sub.conversationHistory,2000);sub.conversationHistory.push({role:'assistant',content:resp});saveSubject();removeTyping(typId);parseAndShow(resp,ti);}catch{removeTyping(typId);}
+}
+
+function showMastered(ti){
+  const sub=getSubject();if(!sub)return;const next=ti+1;sub.topicUnlocked[next]=true;
+  schedRev(sub,ti);saveSubject();buildRail();checkRevBadge();renderSubList();
+  const adp=getAdaptiveNext(sub);const isAdp=adp&&adp.topicIndex!==next&&adp.isAdaptive;
+  const target=isAdp?adp.topicIndex:next;
+  const adpNote=isAdp?`<div class="adaptive-notice" style="margin-bottom:12px">Adaptive routing — addressing weak spot in <em>${esc(sub.topics[adp.topicIndex]?.title)}</em> first.</div>`:'';
+  const est=sub.topics[target]?.estimatedMins||5;
+  addMsg('tutor',`<div class="cel-card"><span class="cel-star">✦</span><h2>Topic Mastered</h2><p>Well done on <em>${esc(sub.topics[ti].title)}</em>. Spaced review scheduled.</p>${adpNote}<button class="cont-btn" onclick="teachTopic(${target})">${esc(sub.topics[target].title)} <span style="opacity:.6;font-size:11px">~${est}m</span> →</button></div>`);
+}
+
+function showComplete(){
+  const sub=getSubject();if(!sub)return;
+  const total=Math.round(Object.values(sub.topicMastery).reduce((a,b)=>a+b,0)/sub.topics.length);
+  sub.overallMastery=total;sub.topics.forEach((_,i)=>schedRev(sub,i));
+  saveSubject();checkRevBadge();renderSubList();renderStreakUI();launchConfetti();
+  addMsg('tutor',`<div class="cel-card" style="border-color:var(--border2)"><span class="cel-star">✦</span><h2>Course Complete</h2><p>All ${sub.topics.length} topics mastered. Spaced reviews scheduled.</p><div style="font-family:'EB Garamond',serif;font-size:52px;color:var(--text);margin:8px 0">${total}%</div><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="cont-btn" onclick="openProg()">View Progress</button><button class="cont-btn sec" onclick="exportPDF()">Export Report</button><button class="cont-btn sec" onclick="openModal()">New Subject</button></div></div>`);
+}
+
+// ── REVIEW ──
+function openReview(){
+  showScr('review');document.getElementById('tb-title').textContent='Review Queue';document.getElementById('tb-prog').style.display='none';
+  const due=getAllDue();const queue=document.getElementById('review-queue');
+  if(!due.length){queue.innerHTML=`<div style="color:var(--muted);font-size:13px;font-style:italic;padding:20px 0">Nothing due — check back later.</div>`;return;}
+  queue.innerHTML=due.map(r=>{
+    const msDue=Date.now()-r.nextReview,daysDue=Math.floor(msDue/864e5);
+    const label=daysDue>0?`${daysDue}d overdue`:'Due today';const cls=daysDue>0?'od':'td';
+    const topic=r.sub.topics[r.topicIndex];
+    return`<div class="rq-item" onclick="startRevTopic('${r.sub.id}',${r.topicIndex})"><span class="rq-ico">${r.sub.icon}</span><div style="flex:1"><div class="rq-name">${esc(r.sub.name)} — ${esc(topic?.title||'Topic')}</div><div class="rq-meta">${r.reviewCount} review${r.reviewCount!==1?'s':''} · ~${topic?.estimatedMins||5} min</div></div><span class="rq-due ${cls}">${label}</span></div>`;
+  }).join('');
+}
+async function startRevTopic(subId,ti){
+  const sub=db.subjects.find(s=>s.id===subId);if(!sub)return;
+  curId=subId;sub.lastOpened=Date.now();
+  session={subject:sub,questionsPerTopic:2,masteryThreshold:75,isReview:true};
+  showScr('lesson');document.getElementById('tb-title').textContent=`${sub.icon} ${sub.name} — Review`;document.getElementById('tb-prog').style.display='flex';
+  document.getElementById('lesson-panel').innerHTML='';buildRail();updateProgUI();
+  sub.currentTopic=ti;sub.topicAttempts[ti]=0;sub.topicCorrect[ti]=0;saveSubject();
+  addMsg('tutor',`<p style="color:var(--warn)">Review — <em>${esc(sub.topics[ti]?.title)}</em>. Let's see what you remember.</p>`);
+  await askQ(ti);
+}
+
+// ── PROGRESS ──
+function openProg(){
+  showScr('progress');document.getElementById('tb-title').textContent='Progress';document.getElementById('tb-prog').style.display='none';
+  const subs=db.subjects;
+  document.getElementById('ps-sub').textContent=`${subs.length} subject${subs.length!==1?'s':''} · ${subs.reduce((a,s)=>a+(s.topics||[]).length,0)} topics · ${db.streak.count||0} day streak`;
+  const cw=document.getElementById('ps-chart');
+  if(subs.length){const max=Math.max(...subs.map(s=>s.overallMastery||0),1);cw.innerHTML=`<div class="chart-wrap"><div class="chart-title">Overall Mastery by Subject</div><div class="chart-bars">${subs.slice(-12).map(s=>`<div class="chart-col"><div class="chart-bar" style="height:${Math.max(Math.round(((s.overallMastery||0)/max)*82),3)}px"></div><div class="chart-x">${s.icon}</div></div>`).join('')}</div></div>`;}else cw.innerHTML='';
+  const grid=document.getElementById('ps-grid');
+  if(!subs.length){grid.innerHTML=`<div style="color:var(--muted);font-style:italic">No subjects yet.</div>`;return;}
+  // Weak spots summary
+  const allWeak=subs.flatMap(s=>getWeakSpots(s).map(w=>({...w,sub:s})));
+  const weakHtml=allWeak.length?`<div style="margin-bottom:24px"><div class="ps-title" style="font-size:22px;margin-bottom:6px">⚠ Weak Spots</div><div style="display:flex;flex-direction:column;gap:6px;max-width:640px">${allWeak.slice(0,8).map(w=>`<div style="background:var(--s1);border:1px solid rgba(154,106,16,.3);border-radius:5px;padding:10px 16px;display:flex;align-items:center;gap:12px"><span style="font-size:15px">${w.sub.icon}</span><div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--text)">${esc(w.sub.name)} — ${esc(w.title)}</div>${w.missed.length?`<div style="font-size:10px;color:var(--muted);margin-top:2px">Missed: ${w.missed.slice(0,3).map(m=>esc(m)).join(', ')}</div>`:''}</div><span style="font-size:11px;color:var(--warn);font-weight:600">${w.mastery}%</span></div>`).join('')}</div></div>`:'';
+  document.getElementById('ps-weak').innerHTML=weakHtml;
+  grid.innerHTML=subs.map(s=>{
+    const due=getDue(s).length,est=s.topics.reduce((a,t)=>a+(t.estimatedMins||5),0),flagged=(s.flaggedQuestions||[]).length;
+    const rows=s.topics.map((t,i)=>{const m=s.topicMastery[i]||0;const col=m>=75?'var(--ok)':m>=40?'var(--warn)':'var(--danger)';return`<div class="ps-row"><span class="ps-rname" title="${esc(t.title)}">${esc(t.title)}</span><div class="ps-rbar"><div class="ps-rfill" style="width:${m}%;background:${col}"></div></div><span class="ps-rpct">${m}%</span></div>`;}).join('');
+    return`<div class="ps-card"><div class="ps-card-hd"><span class="ps-card-ico">${s.icon}</span><span class="ps-card-name">${esc(s.name)}</span><span class="ps-card-m">${s.overallMastery||0}%</span></div><div style="font-size:10px;color:var(--muted);margin-bottom:12px">~${est} min${due?` · ${due} review${due!==1?'s':''} due`:''}${flagged?` · ${flagged} flagged`:''}</div>${rows}</div>`;
+  }).join('');
+}
+
+// ── EXPORT ──
+function exportPDF(){
+  const sub=getSubject();if(!sub){alert('Open a subject first.');return;}
+  const rows=sub.topics.map((t,i)=>{const m=sub.topicMastery[i]||0;const bar='█'.repeat(Math.round(m/10))+'░'.repeat(10-Math.round(m/10));const sr=sub.srData?.[i];const nr=sr?.nextReview?new Date(sr.nextReview).toLocaleDateString():'—';const mc=getMissed(sub,i);return`<tr><td>${esc(t.title)}</td><td style="font-family:monospace;font-size:11px">${bar} ${m}%</td><td>${nr}</td><td style="font-size:11px;color:#888">${mc.length?mc.join(', '):'—'}</td></tr>`;}).join('');
+  const flagged=(sub.flaggedQuestions||[]).map(f=>`<li>${esc(f.question)}</li>`).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(sub.name)}</title><style>@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500&family=Inter:wght@400;500&display=swap');body{font-family:'Inter',sans-serif;padding:48px;max-width:720px;margin:0 auto;color:#1a1a1a;}h1{font-family:'EB Garamond',serif;font-size:32px;font-weight:400;margin-bottom:4px;}sub{font-size:13px;color:#888;display:block;margin-bottom:28px;}.stats{display:flex;gap:28px;margin-bottom:32px;}.sn{font-family:'EB Garamond',serif;font-size:36px;color:#1a1a1a;}.sl{font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px;}table{width:100%;border-collapse:collapse;margin-top:18px;}th{text-align:left;padding:8px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid #eee;color:#999;}td{padding:9px 10px;border-bottom:1px solid #f0f0f0;font-size:12px;}footer{margin-top:40px;font-size:10px;color:#ccc;}</style></head><body>
+<h1>${sub.icon} ${esc(sub.name)}</h1><sub>MasterMind Progress Report — ${new Date().toLocaleDateString()}</sub>
+<div class="stats"><div><div class="sn">${sub.overallMastery||0}%</div><div class="sl">Overall</div></div><div><div class="sn">${sub.topics.length}</div><div class="sl">Topics</div></div><div><div class="sn">${Object.values(sub.topicMastery||{}).filter(m=>m>=75).length}</div><div class="sl">Mastered</div></div><div><div class="sn">${getDue(sub).length}</div><div class="sl">Due for Review</div></div></div>
+<table><thead><tr><th>Topic</th><th>Mastery</th><th>Next Review</th><th>Weak Concepts</th></tr></thead><tbody>${rows}</tbody></table>
+${flagged?`<h3 style="margin-top:24px;font-family:'EB Garamond',serif;font-weight:400">Flagged Questions</h3><ul style="font-size:12px;line-height:1.8">${flagged}</ul>`:''}
+<footer>MasterMind · ${new Date().toISOString()}</footer></body></html>`;
+  const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);
+  const win=window.open(url,'_blank');
+  if(win){win.onload=()=>{setTimeout(()=>{win.print();},500);};}
+  else{const a=document.createElement('a');a.href=url;a.download=`${sub.name.replace(/\s+/g,'_')}_report.html`;a.click();}
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+
+// ── UI ──
+function addMsg(role,html,isTutor=false){
+  const panel=document.getElementById('lesson-panel');
+  const av=role==='tutor'?'✦':'›';
+  const ttsBtn=isTutor?`<button class="tts-btn" onclick="speakEl(this.closest('.msg-bbl').innerHTML,this)" title="Read aloud">♪</button>`:'';
+  const d=document.createElement('div');d.className=`msg ${role}`;
+  d.innerHTML=`<div class="msg-av">${av}</div><div class="msg-bbl">${ttsBtn}${html}</div>`;
+  panel.appendChild(d);d.scrollIntoView({behavior:'smooth',block:'end'});
+  if(isTutor)autoSpeak(html);
+  const sub=getSubject();if(!sub)return;
+  if(!sub.savedMessages)sub.savedMessages=[];sub.savedMessages.push({role,html});
+  if(sub.savedMessages.length>80)sub.savedMessages=sub.savedMessages.slice(-80);
+  saveSubject();
+}
+function appendHTML(role,html){
+  const panel=document.getElementById('lesson-panel');const av=role==='tutor'?'✦':'›';
+  const d=document.createElement('div');d.className=`msg ${role}`;
+  d.innerHTML=`<div class="msg-av">${av}</div><div class="msg-bbl">${html}</div>`;panel.appendChild(d);
+}
+function showTyping(){
+  const panel=document.getElementById('lesson-panel');const id='typ-'+Date.now();
+  const d=document.createElement('div');d.className='msg tutor';d.id=id;
+  d.innerHTML=`<div class="msg-av">✦</div><div class="msg-bbl"><div class="typ-row"><div class="t-d"></div><div class="t-d"></div><div class="t-d"></div></div></div>`;
+  panel.appendChild(d);d.scrollIntoView({behavior:'smooth',block:'end'});return id;
+}
+function removeTyping(id){document.getElementById(id)?.remove();}
+
+function buildRail(){
+  const sub=getSubject();if(!sub)return;
+  const rail=document.getElementById('topic-rail');
+  rail.innerHTML=`<div class="tr-lbl">Topics</div>`+sub.topics.map((t,i)=>{
+    const m=sub.topicMastery[i]||0,due=sub.srData?.[i]?.nextReview&&Date.now()>=sub.srData[i].nextReview;
+    const isWeak=m>0&&m<50;
+    const cls=m>=75?(due?'done':'done'):i===sub.currentTopic?'act':!sub.topicUnlocked[i]?'lk':isWeak?'weak':'';
+    return`<div class="tr-it ${cls}"><span class="tr-dot"></span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.title)}</span><span class="tr-pct">${m>0?m+'%':'~'+(t.estimatedMins||5)+'m'}</span></div>`;
+  }).join('');
+}
+
+function updateProgUI(){
+  const sub=getSubject();if(!sub)return;
+  const total=sub.topics.length,mastered=Object.values(sub.topicMastery).filter(m=>m>=75).length;
+  const curM=sub.topicMastery[sub.currentTopic]||0;
+  const pct=Math.round(((mastered/total)+(curM/100/total))*100);
+  document.getElementById('prog-fill').style.width=pct+'%';document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('prog-lbl').textContent=`Topic ${(sub.currentTopic||0)+1} / ${total}`;
+  document.getElementById('tb-stars').textContent=curM>=75?'◆◆◆':curM>=40?'◆◆◇':'◆◇◇';
+}
+
+function showScr(name){
+  ['home','lesson','review','prog','flash'].forEach(n=>document.getElementById(`${n}-scr`).style.display='none');
+  document.getElementById(`${name}-scr`).style.display='flex';
+}
+function showLoad(t){document.getElementById('lo').classList.add('on');document.getElementById('lo-txt').textContent=t||'Loading…';}
+function setLoadTxt(t){document.getElementById('lo-txt').textContent=t;}
+function hideLoad(){document.getElementById('lo').classList.remove('on');}
+
+// ── CLAUDE ──
+async function callClaude(messages,maxTokens=1000,jsonMode=false){
+  const system=jsonMode?'Return only valid JSON with no markdown, no explanation, no code fences.':'You are MasterMind, an expert adaptive tutor. Teach clearly and rigorously. Include hints and concept labels in every question JSON. Adapt to weak spots.';
+  let resp, data;
+  try {
+    resp = await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:currentModel(),max_tokens:maxTokens,system,messages})});
+    data = await resp.json();
+  } catch(e) {
+    showAPIError('Cannot reach the server. Is node server.js running?'); throw e;
+  }
+  if(!resp.ok) { showAPIError(data.error?.message||'API error'); throw new Error(data.error?.message||'API error'); }
+  return data.content?.[0]?.text||'';
+}
+
+// ── UTILS ──
+function getSubject(){return db.subjects.find(s=>s.id===curId)||null;}
+function saveSubject(){const sub=getSubject();if(!sub)return;const idx=db.subjects.findIndex(s=>s.id===sub.id);if(idx>=0)db.subjects[idx]=sub;saveDB();}
+function fmtTxt(t){return t.replace(/```([\s\S]*?)```/g,'<pre><code>$1</code></pre>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^# (.+)$/gm,'<h2>$1</h2>').replace(/^\- (.+)$/gm,'<li>$1</li>').replace(/(<li>.*<\/li>)/g,'<ul>$1</ul>').replace(/\n\n+/g,'</p><p>').replace(/^([^<].*[^>])$/gm,m=>m.startsWith('<')?m:`<p>${m}</p>`).replace(/<p><\/p>/g,'');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escTpl(s){return String(s||'').replace(/`/g,'\\`').replace(/\$/g,'\\$');}
+
+
+
+// ── TIME TRACKING ──
+function trackTime(id){
+  const sub=db.subjects.find(s=>s.id===id);if(!sub||!sub._sessionStart)return;
+  const mins=Math.round((Date.now()-sub._sessionStart)/60000);
+  if(mins>0){sub.totalMins=(sub.totalMins||0)+mins;sub._sessionStart=null;saveDB();}
+}
+
+// ── DARK MODE ──
+function toggleDark(){
+  const d=document.body.classList.toggle('dark');
+  localStorage.setItem('mm_dark',d?'1':'0');
+  document.getElementById('btn-dark').classList.toggle('on',d);
+}
+(()=>{if(localStorage.getItem('mm_dark')==='1'){document.body.classList.add('dark');document.getElementById('btn-dark').classList.add('on');}})();
+
+// ── FLASHCARDS ──
+let flashIdx=0,flashCards=[],flashPrev='lesson';
+function openFlashcards(){
+  const sub=getSubject();if(!sub||!sub.topics.length)return;
+  flashCards=sub.topics;flashIdx=0;flashPrev=document.querySelector('.scr[style*="flex"]')?.id?.replace('-scr','')||'lesson';
+  document.getElementById('flash-title').textContent=sub.icon+' '+sub.name;
+  document.getElementById('tb-title').textContent=sub.icon+' '+sub.name+' — Cards';
+  document.getElementById('tb-prog').style.display='none';
+  showScr('flash');renderFlashCard();
+}
+function closeFlashcards(){
+  document.getElementById('tb-prog').style.display='flex';
+  const sub=getSubject();if(sub)document.getElementById('tb-title').textContent=sub.icon+' '+sub.name;
+  showScr(flashPrev||'lesson');
+}
+function renderFlashCard(){
+  const t=flashCards[flashIdx];
+  document.getElementById('flash-card').classList.remove('flipped');
+  document.getElementById('flash-front').textContent=t.title;
+  document.getElementById('flash-back').textContent=t.summary||'No summary available.';
+  document.getElementById('flash-counter').textContent=(flashIdx+1)+' / '+flashCards.length;
+  document.getElementById('flash-prog-fill').style.width=Math.round(((flashIdx+1)/flashCards.length)*100)+'%';
+  document.getElementById('flash-prev').disabled=flashIdx===0;
+  document.getElementById('flash-next').disabled=flashIdx===flashCards.length-1;
+}
+function flipCard(){document.getElementById('flash-card').classList.toggle('flipped');}
+function flashNav(dir){
+  flashIdx=Math.max(0,Math.min(flashCards.length-1,flashIdx+dir));
+  renderFlashCard();
+}
+// keyboard nav for flashcards
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('flash-scr') || document.getElementById('flash-scr').style.display==='none')return;
+  if(e.key==='ArrowRight')flashNav(1);
+  else if(e.key==='ArrowLeft')flashNav(-1);
+  else if(e.key===' '){e.preventDefault();flipCard();}
+});
+
+// ── NOTES ──
+let noteSaveTimer=null;
+function loadNote(){
+  const sub=getSubject();if(!sub)return;
+  const key='mm_note_'+sub.id;
+  const ti=sub.currentTopic||0;
+  const noteKey=key+'_t'+ti;
+  const val=localStorage.getItem(noteKey)||'';
+  document.getElementById('notes-ta').value=val;
+  document.getElementById('notes-toggle').classList.toggle('has-note',val.trim().length>0);
+  updateNoteTitle();
+}
+function updateNoteTitle(){
+  const sub=getSubject();if(!sub)return;
+  const t=sub.topics[sub.currentTopic||0];
+  document.querySelector('.notes-hd-title').textContent='Notes — '+(t?.title||'Topic');
+}
+function saveNote(){
+  const sub=getSubject();if(!sub)return;
+  const ti=sub.currentTopic||0;
+  const key='mm_note_'+sub.id+'_t'+ti;
+  const val=document.getElementById('notes-ta').value;
+  localStorage.setItem(key,val);
+  document.getElementById('notes-toggle').classList.toggle('has-note',val.trim().length>0);
+  const s=document.getElementById('notes-saved');s.classList.add('show');
+  clearTimeout(noteSaveTimer);noteSaveTimer=setTimeout(()=>s.classList.remove('show'),1500);
+}
+function clearNote(){
+  if(!confirm('Clear notes for this topic?'))return;
+  document.getElementById('notes-ta').value='';saveNote();
+}
+function toggleNotes(){
+  const p=document.getElementById('notes-panel');
+  const isOpen=p.classList.toggle('open');
+  p.style.display=isOpen?'flex':'none';
+  if(isOpen)setTimeout(()=>document.getElementById('notes-ta').focus(),320);
+}
+function closeNotes(){
+  const p=document.getElementById('notes-panel');
+  p.classList.remove('open');p.style.display='none';
+}
+
+
+// ── MODEL ──
+const MODELS = {
+  haiku: 'claude-haiku-4-5-20251001',
+  sonnet: 'claude-sonnet-4-20250514',
+  opus: 'claude-opus-4-20250514'
+};
+function currentModel(){ return MODELS[localStorage.getItem('mm_model')||'sonnet']; }
+function setModel(m){ localStorage.setItem('mm_model',m); document.querySelectorAll('.model-opt').forEach(b=>b.classList.toggle('act',b.dataset.m===m)); }
+
+// ── API ERROR ──
+function showAPIError(msg){
+  let el=document.getElementById('api-err');
+  if(!el){
+    el=document.createElement('div');el.id='api-err';
+    el.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#b83c2a;color:#fff;padding:12px 20px;border-radius:6px;font-size:13px;z-index:9999;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:fadeUp .3s ease;max-width:480px;text-align:center;';
+    el.innerHTML=`<span id="api-err-txt"></span><button onclick="document.getElementById('api-err').remove()" style="background:none;border:1px solid rgba(255,255,255,.4);color:#fff;padding:3px 9px;border-radius:3px;cursor:pointer;font-size:11px;white-space:nowrap;">Dismiss</button>`;
+    document.body.appendChild(el);
+  }
+  document.getElementById('api-err-txt').textContent=msg;
+  clearTimeout(el._t);el._t=setTimeout(()=>el?.remove(),6000);
+}
+
+// ── CONFETTI ──
+function launchConfetti(){
+  const colors=['#1a1a1a','#9a6a10','#2e7d4a','#b83c2a','#4a7ab8'];
+  for(let i=0;i<80;i++){
+    const d=document.createElement('div');
+    const size=Math.random()*8+4;
+    d.style.cssText=`position:fixed;top:-10px;left:${Math.random()*100}vw;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'2px'};opacity:${Math.random()*.8+.2};pointer-events:none;z-index:9999;animation:confettiFall ${Math.random()*2+1.5}s ease-in forwards;animation-delay:${Math.random()*.5}s;`;
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),3500);
+  }
+}
+
+// ── KEYBOARD SHORTCUTS ──
+document.addEventListener('keydown', e => {
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if(e.key==='n'||e.key==='N') { openModal(); return; }
+  if(e.key==='r'||e.key==='R') { openReview(); return; }
+  if(e.key==='p'||e.key==='P') { if(curId) openProg(); return; }
+  if(e.key==='Escape') { closeModal(); closeNotes(); return; }
+  // MCQ 1-4
+  if(['1','2','3','4'].includes(e.key)) {
+    const opts=document.querySelectorAll('.opt:not(:disabled)');
+    const idx=parseInt(e.key)-1;
+    if(opts[idx]) opts[idx].click();
+  }
+  // Enter to submit open answer
+  if(e.key==='Enter'&&e.metaKey) {
+    const btn=document.querySelector('.submit-btn:not(:disabled)');
+    if(btn) btn.click();
+  }
+});
+
+// ── ONBOARDING ──
+function showOnboarding(){
+  if(localStorage.getItem('mm_onboarded')) return;
+  const overlay=document.createElement('div');
+  overlay.id='onboard-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeUp .3s ease;';
+  const subjects=[
+    {cat:'Science',items:[['🧬','Biology'],['⚗️','Chemistry'],['⚡','Physics'],['🌍','Earth Science']]},
+    {cat:'Maths',items:[['🧮','Calculus'],['📐','Statistics'],['∑','Linear Algebra'],['🔢','Discrete Maths']]},
+    {cat:'Computing',items:[['💻','Python'],['🌐','Web Development'],['🤖','Machine Learning'],['🔒','Cybersecurity']]},
+    {cat:'Humanities',items:[['✍️','Essay Writing'],['🏛️','Roman History'],['📜','Philosophy'],['💬','English Literature']]},
+    {cat:'Business',items:[['📈','Economics'],['💼','Marketing'],['💰','Finance'],['📊','Accounting']]},
+  ];
+  overlay.innerHTML=`<div style="background:var(--s1);border:1px solid var(--border2);border-radius:10px;padding:40px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-family:'EB Garamond',serif;font-size:36px;font-weight:400;color:var(--cream);margin-bottom:6px;">Welcome to MasterMind.</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7;max-width:420px;margin:0 auto;">Your AI tutor that builds a custom curriculum, teaches it clearly, and drills the exact things you keep getting wrong. Pick a subject to begin.</p>
+    </div>
+    ${subjects.map(cat=>`<div style="margin-bottom:20px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:8px;font-family:'Inter',sans-serif;">${cat.cat}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${cat.items.map(([icon,name])=>`<button onclick="startOnboard('${name}','${icon}')" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:11px 14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--text);text-align:left;display:flex;align-items:center;gap:9px;transition:all .12s;" onmouseover="this.style.borderColor='var(--border2)';this.style.background='var(--s3)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--s2)'"><span style="font-size:16px">${icon}</span>${name}</button>`).join('')}</div></div>`).join('')}
+    <div style="text-align:center;margin-top:8px;padding-top:16px;border-top:1px solid var(--border);">
+      <p style="font-size:11px;color:var(--muted2);margin-bottom:8px;">Don't see your subject? You can create any custom subject.</p>
+      <button onclick="dismissOnboard()" style="background:var(--text);color:var(--bg);border:none;border-radius:4px;padding:9px 24px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Choose my own subject →</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+function startOnboard(name, icon){
+  dismissOnboard();
+  document.getElementById('m-name').value=name;
+  document.querySelectorAll('.ico-o').forEach(e=>e.classList.toggle('sel',e.dataset.icon===icon));
+  createSubject();
+}
+function dismissOnboard(){
+  localStorage.setItem('mm_onboarded','1');
+  document.getElementById('onboard-overlay')?.remove();
+}
+
+// ── WEAK SPOTS in Progress ──
+function getWeakSpots(sub){
+  return sub.topics.map((t,i)=>({title:t.title,mastery:sub.topicMastery[i]||0,missed:sub.missedConcepts?.[i]||[]}))
+    .filter(t=>t.mastery>0&&t.mastery<75)
+    .sort((a,b)=>a.mastery-b.mastery);
+}
+
+init();
+</script>
+</body>
+</html>
