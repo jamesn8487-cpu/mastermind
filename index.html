@@ -29,6 +29,77 @@
   --sw:     260px;
 }
 
+
+body.dark {
+  --bg:     #141210;
+  --s1:     #1c1a17;
+  --s2:     #231f1b;
+  --s3:     #2a2620;
+  --border: #3a3530;
+  --border2:#4a4540;
+  --gold:   #e8e0d0;
+  --gold2:  #c8c0b0;
+  --goldg:  rgba(232,224,208,0.06);
+  --cream:  #e8e0d0;
+  --text:   #d0c8b8;
+  --muted:  #807870;
+  --muted2: #605850;
+  --danger: #e05040;
+  --ok:     #4a9e6a;
+  --warn:   #c89030;
+}
+
+
+
+
+.cal-wrap { width:100%; }
+.cal-title { font-size:12px; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:.8px; }
+.cal-grid { display:flex; gap:3px; flex-wrap:wrap; }
+.cal-day { width:13px; height:13px; border-radius:2px; background:var(--s3); cursor:pointer; transition:all .1s; }
+.cal-day:hover { transform:scale(1.3); }
+.cal-day.l1 { background:rgba(46,125,74,.25); }
+.cal-day.l2 { background:rgba(46,125,74,.5); }
+.cal-day.l3 { background:rgba(46,125,74,.75); }
+.cal-day.l4 { background:var(--ok); }
+.cal-months { display:flex; gap:3px; font-size:9px; color:var(--muted); margin-bottom:4px; }
+.cal-legend { display:flex; align-items:center; gap:5px; margin-top:8px; font-size:10px; color:var(--muted); }
+
+#timed-scr { flex-direction:column; align-items:center; justify-content:flex-start; padding:40px 24px; gap:20px; overflow-y:auto; }
+.tq-header { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:520px; }
+.tq-timer { font-family:'EB Garamond',serif; font-size:48px; font-weight:400; color:var(--cream); line-height:1; }
+.tq-timer.warn { color:var(--danger); }
+.tq-score { font-size:13px; color:var(--muted); }
+.tq-bar { width:100%; max-width:520px; height:3px; background:var(--border2); border-radius:2px; overflow:hidden; }
+.tq-bar-fill { height:100%; background:var(--gold); border-radius:2px; transition:width .1s linear; }
+.tq-q { font-family:'EB Garamond',serif; font-size:20px; color:var(--cream); max-width:520px; width:100%; line-height:1.5; text-align:center; min-height:60px; }
+.tq-opts { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; max-width:520px; }
+.tq-opt { background:var(--s1); border:1px solid var(--border2); border-radius:6px; padding:12px 14px; font-size:13px; color:var(--text); cursor:pointer; text-align:left; font-family:'Inter',sans-serif; transition:all .15s; }
+.tq-opt:hover { border-color:var(--gold); color:var(--cream); }
+.tq-opt.correct { background:rgba(46,125,74,.12); border-color:var(--ok); color:var(--ok); }
+.tq-opt.wrong { background:rgba(184,60,42,.1); border-color:var(--danger); color:var(--danger); }
+.tq-result { text-align:center; max-width:520px; width:100%; }
+.tq-result h2 { font-family:'EB Garamond',serif; font-size:36px; font-weight:400; color:var(--cream); margin-bottom:8px; }
+.tq-result p { font-size:13px; color:var(--muted); margin-bottom:20px; }
+
+.share-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; align-items:center; justify-content:center; }
+.share-overlay.on { display:flex; }
+.share-box { background:var(--s1); border:1px solid var(--border2); border-radius:8px; padding:28px; width:400px; max-width:90vw; }
+.share-box h3 { font-family:'EB Garamond',serif; font-size:20px; font-weight:400; color:var(--cream); margin-bottom:6px; }
+.share-box p { font-size:12px; color:var(--muted); margin-bottom:16px; line-height:1.6; }
+.share-url { width:100%; background:var(--s2); border:1px solid var(--border); border-radius:4px; padding:8px 10px; font-size:11px; color:var(--text); font-family:monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+.share-btns { display:flex; gap:8px; margin-top:12px; }
+.share-btn { flex:1; padding:9px; background:var(--s1); border:1px solid var(--border2); border-radius:4px; font-family:'Inter',sans-serif; font-size:12px; font-weight:500; color:var(--text); cursor:pointer; transition:all .15s; }
+.share-btn:hover { background:var(--s2); }
+.share-btn.pri { background:var(--gold); color:var(--bg); border-color:var(--gold); }
+.share-btn.pri:hover { opacity:.85; }
+
+.sub-sec-lbl { font-size:9px; text-transform:uppercase; letter-spacing:1.2px; color:var(--muted); font-weight:600; padding:10px 10px 4px; }
+.sub-sec-lbl.warn { color:var(--warn); }
+.sub-sec-lbl.ok   { color:var(--ok); }
+
+.dark-toggle { background:none; border:1px solid var(--border2); border-radius:4px; color:var(--muted); font-size:13px; padding:5px 9px; cursor:pointer; font-family:'Inter',sans-serif; transition:all .15s; }
+.dark-toggle:hover { border-color:var(--gold); color:var(--text); }
+
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { height:100%; }
 body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); overflow:hidden; font-size:14px; }
@@ -647,12 +718,6 @@ body::after {
   <div class="nav-search-wrap">
     <input class="nav-search" id="nav-search" placeholder="Search subjects…" oninput="renderSubList()">
   </div>
-  <div class="nav-sec-lbl">Sort</div>
-  <div class="sort-row">
-    <button class="srt-btn act" onclick="setSort('recent',this)">Recent</button>
-    <button class="srt-btn" onclick="setSort('name',this)">A–Z</button>
-    <button class="srt-btn" onclick="setSort('mastery',this)">Mastery</button>
-  </div>
   <button class="nav-new" onclick="openModal()"><span>+</span><span>New Subject</span></button>
   <div class="sub-list" id="sub-list"></div>
 </div>
@@ -671,10 +736,13 @@ body::after {
     </div>
     <div class="tb-acts">
       <button class="tb-btn" id="btn-tts" onclick="toggleTTS()" style="display:none">♪</button>
+      <button class="tb-btn" id="btn-timed" onclick="openTimedQuiz()" style="display:none">⏱ Quiz</button>
       <button class="tb-btn" id="btn-flash" onclick="openFlashcards()" style="display:none">⊞ Cards</button>
       <button class="tb-btn" id="btn-prog" onclick="openProg()" style="display:none">Progress</button>
+      <button class="tb-btn" id="btn-share" onclick="openShare()" style="display:none">Share</button>
       <button class="tb-btn" id="btn-exp" onclick="exportPDF()" style="display:none">Export</button>
       <div class="user-pill" id="user-pill" onclick="openUserMenu()"><div class="user-pill-av" id="user-av">?</div><span class="user-pill-name" id="user-name">Account</span></div>
+      <button class="dark-toggle" id="dark-toggle" onclick="toggleDark()" title="Toggle dark mode">☀</button>
       <button class="sign-in-btn" id="sign-in-btn" onclick="showAuth('topbar')" style="display:none">Sign in</button>
     </div>
   </div>
@@ -686,6 +754,32 @@ body::after {
       <p class="home-sub">Select a subject from the sidebar, or create a new one. The AI will teach you step-by-step and adapt to your weaknesses.</p>
       <button class="home-cta" onclick="openModal()">Add Subject</button>
     </div>
+
+    <!-- TIMED QUIZ -->
+    <div id="timed-scr" class="scr" style="display:none">
+      <div class="tq-header">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px">Time</div>
+          <div class="tq-timer" id="tq-timer">60</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px">Score</div>
+          <div class="tq-score" id="tq-score">0 / 0</div>
+        </div>
+      </div>
+      <div class="tq-bar"><div class="tq-bar-fill" id="tq-bar" style="width:100%"></div></div>
+      <div class="tq-q" id="tq-q">Loading…</div>
+      <div class="tq-opts" id="tq-opts"></div>
+      <div class="tq-result" id="tq-result" style="display:none">
+        <h2 id="tq-res-score"></h2>
+        <p id="tq-res-msg"></p>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button class="cont-btn" onclick="startTimedQuiz()">Play again</button>
+          <button class="cont-btn sec" onclick="closeTimedQuiz()">Back</button>
+        </div>
+      </div>
+    </div>
+
     <!-- LESSON -->
     <div id="lesson-scr" class="scr" style="display:none;flex:1;overflow:hidden">
       <div class="lesson-layout">
@@ -705,6 +799,7 @@ body::after {
     <div id="prog-scr" class="scr" style="display:none;flex-direction:column;overflow-y:auto;padding:40px 48px;gap:24px">
       <div><div class="ps-title">Progress</div><div class="ps-sub" id="ps-sub"></div></div>
       <div id="ps-chart"></div>
+      <div id="ps-cal"></div>
       <div class="ps-grid" id="ps-grid"></div>
     </div>
   </div>
@@ -870,11 +965,8 @@ function renderSubList(){
   const list=document.getElementById('sub-list');
   const q=(document.getElementById('nav-search').value||'').toLowerCase();
   let subs=[...db.subjects].filter(s=>!q||s.name.toLowerCase().includes(q));
-  if(sortMode==='name')subs.sort((a,b)=>a.name.localeCompare(b.name));
-  else if(sortMode==='mastery')subs.sort((a,b)=>(b.overallMastery||0)-(a.overallMastery||0));
-  else subs.sort((a,b)=>(b.lastOpened||0)-(a.lastOpened||0));
   if(!subs.length){list.innerHTML=`<div style="padding:16px 10px;font-size:11px;color:var(--muted);text-align:center;line-height:1.7;font-style:italic">No subjects yet.<br>Create one above.</div>`;return;}
-  list.innerHTML=subs.map(s=>{
+  function scCard(s){
     const m=s.overallMastery||0,tc=(s.topics||[]).length,mc=Object.values(s.topicMastery||{}).filter(x=>x>=75).length,due=getDue(s).length,weak=Object.values(s.topicMastery||{}).filter(x=>x>0&&x<75).length;
     return`<div class="sc${s.id===curId?' act':''}" id="sc-${s.id}" onclick="openSubject('${s.id}')">
       <span class="sc-ico">${s.icon}</span>
@@ -882,7 +974,17 @@ function renderSubList(){
       <div class="sc-meta"><span class="sc-tag gld">${m}%</span>${due?`<span class="sc-tag org">↻${due}</span>`:''}${weak?`<span class="sc-tag" style="color:var(--warn)">⚠${weak}</span>`:''}${mc===tc&&tc?`<span class="sc-tag grn">✓</span>`:''}</div>
       <button class="sc-del" onclick="delSub(event,'${s.id}')">✕</button>
     </div>`;
-  }).join('');
+  }
+  const due=subs.filter(s=>getDue(s).length>0);
+  const inProg=subs.filter(s=>!getDue(s).length&&(s.overallMastery||0)>0&&(s.overallMastery||0)<100);
+  const notStarted=subs.filter(s=>!getDue(s).length&&!(s.overallMastery||0));
+  const complete=subs.filter(s=>!getDue(s).length&&(s.overallMastery||0)>=100);
+  let html='';
+  if(due.length)html+=`<div class="sub-sec-lbl warn">↻ Due · ${due.length}</div>`+due.map(scCard).join('');
+  if(inProg.length)html+=`<div class="sub-sec-lbl">In progress · ${inProg.length}</div>`+inProg.map(scCard).join('');
+  if(notStarted.length)html+=`<div class="sub-sec-lbl">Not started · ${notStarted.length}</div>`+notStarted.map(scCard).join('');
+  if(complete.length)html+=`<div class="sub-sec-lbl ok">✓ Complete · ${complete.length}</div>`+complete.map(scCard).join('');
+  list.innerHTML=html;
 }
 
 // ── MODAL ──
@@ -920,7 +1022,7 @@ async function openSubject(id){
   recordSession();saveDB();renderSubList();checkRevBadge();
   document.getElementById('tb-title').textContent=`${sub.icon} ${sub.name}`;
   document.getElementById('tb-prog').style.display='flex';
-  ['btn-prog','btn-exp','btn-tts','btn-flash'].forEach(i=>document.getElementById(i).style.display='inline-flex');
+  ['btn-prog','btn-exp','btn-tts','btn-flash','btn-share','btn-timed'].forEach(i=>document.getElementById(i).style.display='inline-flex');
   showScr('lesson');
   session={subject:sub,questionsPerTopic:3,masteryThreshold:75,isReview:false};
   updateProgUI();buildRail();
@@ -934,7 +1036,7 @@ async function openSubject(id){
   }
 }
 
-function delSub(e,id){e.stopPropagation();if(!confirm('Delete this subject and all progress?'))return;db.subjects=db.subjects.filter(s=>s.id!==id);if(db.lastOpened===id){db.lastOpened=null;curId=null;showScr('home');['tb-prog','btn-prog','btn-exp','btn-tts','btn-flash'].forEach(i=>document.getElementById(i).style.display='none');document.getElementById('tb-title').textContent='MasterMind.';}saveDB();renderSubList();checkRevBadge();}
+function delSub(e,id){e.stopPropagation();if(!confirm('Delete this subject and all progress?'))return;db.subjects=db.subjects.filter(s=>s.id!==id);if(db.lastOpened===id){db.lastOpened=null;curId=null;showScr('home');['tb-prog','btn-prog','btn-exp','btn-tts','btn-flash','btn-share','btn-timed'].forEach(i=>document.getElementById(i).style.display='none');document.getElementById('tb-title').textContent='MasterMind.';}saveDB();renderSubList();checkRevBadge();}
 
 // ── TEACH ──
 async function teachTopic(ti){
@@ -1163,7 +1265,21 @@ function exportPDF(){
 <div class="stats"><div><div class="sn">${sub.overallMastery||0}%</div><div class="sl">Overall</div></div><div><div class="sn">${sub.topics.length}</div><div class="sl">Topics</div></div><div><div class="sn">${Object.values(sub.topicMastery||{}).filter(m=>m>=75).length}</div><div class="sl">Mastered</div></div><div><div class="sn">${getDue(sub).length}</div><div class="sl">Due for Review</div></div></div>
 <table><thead><tr><th>Topic</th><th>Mastery</th><th>Next Review</th><th>Weak Concepts</th></tr></thead><tbody>${rows}</tbody></table>
 ${flagged?`<h3 style="margin-top:24px;font-family:'EB Garamond',serif;font-weight:400">Flagged Questions</h3><ul style="font-size:12px;line-height:1.8">${flagged}</ul>`:''}
-<footer>MasterMind · ${new Date().toISOString()}</footer></body></html>`;
+<footer>MasterMind · ${new Date().toISOString()}</footer>
+<!-- SHARE OVERLAY -->
+<div class="share-overlay" id="share-overlay">
+  <div class="share-box">
+    <h3>Share Subject</h3>
+    <p>Anyone with this link can import this subject and its full curriculum into their MasterMind.</p>
+    <div class="share-url" id="share-url" onclick="copyShareLink()" title="Click to copy">Loading…</div>
+    <div class="share-btns">
+      <button class="share-btn" onclick="closeShare()">Close</button>
+      <button class="share-btn pri" onclick="copyShareLink()">Copy Link</button>
+    </div>
+  </div>
+</div>
+
+</body></html>`;
   const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`${sub.name.replace(/\s+/g,'_')}_report.html`;a.click();URL.revokeObjectURL(url);
 }
 
@@ -1216,7 +1332,7 @@ function updateProgUI(){
 }
 
 function showScr(name){
-  ['home','lesson','review','prog'].forEach(n=>{const el=document.getElementById(`${n}-scr`);if(el)el.style.display='none';});const fscr=document.getElementById('flash-scr');if(fscr)fscr.style.display='none';
+  ['home','lesson','review','prog'].forEach(n=>{const el=document.getElementById(`${n}-scr`);if(el)el.style.display='none';});const fscr=document.getElementById('flash-scr');if(fscr)fscr.style.display='none';const tscr=document.getElementById('timed-scr');if(tscr)tscr.style.display='none';
   document.getElementById(`${name}-scr`).style.display='flex';
 }
 function showLoad(t){document.getElementById('lo').classList.add('on');document.getElementById('lo-txt').textContent=t||'Loading…';}
@@ -1407,6 +1523,190 @@ function renderFlashCard(){
 function flipCard(){const c=document.getElementById('fl-card');if(c)c.style.transform=c.style.transform?'':'rotateY(180deg)';}
 function flashNav(dir){_flashIdx=Math.max(0,Math.min(_flashCards.length-1,_flashIdx+dir));renderFlashCard();}
 
+// ── DARK MODE ──
+function toggleDark(){
+  const dark=!document.body.classList.contains('dark');
+  document.body.classList.toggle('dark',dark);
+  document.getElementById('dark-toggle').textContent=dark?'☀':'☾';
+  localStorage.setItem('mm_dark',dark?'1':'');
+}
+(function(){
+  if(localStorage.getItem('mm_dark')){
+    document.body.classList.add('dark');
+    const btn=document.getElementById('dark-toggle');
+    if(btn)btn.textContent='☀';
+  }
+})();
+
+// ── SHARE SUBJECT ──
+function openShare(){
+  const sub=getSubject();if(!sub)return;
+  const payload=JSON.stringify({n:sub.name,i:sub.icon,t:sub.topics,c:sub.content?.substring(0,500)||''});
+  const enc=btoa(unescape(encodeURIComponent(payload)));
+  const url=window.location.origin+window.location.pathname+'?import='+enc;
+  document.getElementById('share-url').textContent=url;
+  document.getElementById('share-overlay').classList.add('on');
+}
+function closeShare(){document.getElementById('share-overlay').classList.remove('on');}
+function copyShareLink(){
+  const url=document.getElementById('share-url').textContent;
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn=document.querySelector('.share-btn.pri');
+    btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy Link',2000);
+  });
+}
+// Check for import on load
+(function(){
+  const p=new URLSearchParams(window.location.search);
+  const raw=p.get('import');
+  if(!raw)return;
+  try{
+    const data=JSON.parse(decodeURIComponent(escape(atob(raw))));
+    if(!data.n||!data.t?.length)return;
+    setTimeout(()=>{
+      if(confirm(`Import "${data.n}" (${data.t.length} topics) into MasterMind?`)){
+        const id='sub_'+Date.now();
+        const sub={id,name:data.n,icon:data.i||'📚',content:data.c||`[AI:${data.n}]`,topics:data.t,topicMastery:{},topicAttempts:{},topicCorrect:{},topicUnlocked:{0:true},currentTopic:0,overallMastery:0,createdAt:Date.now(),lastOpened:Date.now(),conversationHistory:[],savedMessages:[],srData:{},missedConcepts:{},flaggedQuestions:[]};
+        db.subjects.push(sub);saveDB();renderSubList();openSubject(id);
+        window.history.replaceState({},'',window.location.pathname);
+      }
+    },800);
+  }catch(e){console.warn('Import failed',e);}
+})();
+
+// ── TIMED QUIZ ──
+let _tqTimer=null,_tqSecs=60,_tqCorrect=0,_tqTotal=0,_tqQuestions=[],_tqIdx=0,_tqLocked=false;
+
+function openTimedQuiz(){
+  if(!clerkUser){showAuth('topbar');return;}
+  const sub=getSubject();
+  if(!sub||!sub.topics?.length){alert('Open a subject first.');return;}
+  // show timed screen
+  ['home','lesson','review','prog'].forEach(n=>{const el=document.getElementById(n+'-scr');if(el)el.style.display='none';});
+  const fscr=document.getElementById('flash-scr');if(fscr)fscr.style.display='none';const tscr=document.getElementById('timed-scr');if(tscr)tscr.style.display='none';
+  const ts=document.getElementById('timed-scr');ts.style.display='flex';
+  document.getElementById('tb-title').textContent=sub.icon+' '+sub.name+' — Quiz';
+  startTimedQuiz();
+}
+async function startTimedQuiz(){
+  const sub=getSubject();if(!sub)return;
+  document.getElementById('tq-result').style.display='none';
+  document.getElementById('tq-q').style.display='block';
+  document.getElementById('tq-opts').style.display='grid';
+  _tqCorrect=0;_tqTotal=0;_tqSecs=60;_tqLocked=false;_tqIdx=0;
+  document.getElementById('tq-score').textContent='0 / 0';
+  document.getElementById('tq-timer').textContent='60';
+  document.getElementById('tq-timer').classList.remove('warn');
+  document.getElementById('tq-bar').style.width='100%';
+  // Generate questions from topics
+  document.getElementById('tq-q').textContent='Generating questions…';
+  document.getElementById('tq-opts').innerHTML='';
+  try{
+    const topics=sub.topics.slice(0,6).map(t=>t.title).join(', ');
+    const raw=await callClaude([{role:'user',content:`Generate 8 rapid-fire multiple choice questions about: ${topics}. Return only JSON: {"questions":[{"q":"question","opts":["a","b","c","d"],"ans":0}]}`}],600,true);
+    let parsed;try{parsed=JSON.parse(raw);}catch{const m=raw.match(/\{[\s\S]*\}/);parsed=m?JSON.parse(m[0]):null;}
+    _tqQuestions=parsed?.questions||[];
+  }catch(e){document.getElementById('tq-q').textContent='Could not generate questions.';return;}
+  if(!_tqQuestions.length){document.getElementById('tq-q').textContent='No questions generated.';return;}
+  showTQQuestion();
+  if(_tqTimer)clearInterval(_tqTimer);
+  _tqTimer=setInterval(()=>{
+    _tqSecs--;
+    document.getElementById('tq-timer').textContent=_tqSecs;
+    document.getElementById('tq-bar').style.width=Math.round((_tqSecs/60)*100)+'%';
+    if(_tqSecs<=10)document.getElementById('tq-timer').classList.add('warn');
+    if(_tqSecs<=0){clearInterval(_tqTimer);endTimedQuiz();}
+  },1000);
+}
+function showTQQuestion(){
+  const q=_tqQuestions[_tqIdx%_tqQuestions.length];
+  _tqLocked=false;
+  document.getElementById('tq-q').textContent=q.q;
+  document.getElementById('tq-opts').innerHTML=q.opts.map((o,i)=>`<button class="tq-opt" onclick="answerTQ(${i})">${o}</button>`).join('');
+}
+function answerTQ(i){
+  if(_tqLocked)return;_tqLocked=true;_tqTotal++;
+  const q=_tqQuestions[_tqIdx%_tqQuestions.length];
+  const correct=i===q.ans;if(correct)_tqCorrect++;
+  document.querySelectorAll('.tq-opt').forEach((b,j)=>{if(j===q.ans)b.classList.add('correct');else if(j===i&&!correct)b.classList.add('wrong');});
+  document.getElementById('tq-score').textContent=_tqCorrect+' / '+_tqTotal;
+  _tqIdx++;
+  setTimeout(()=>{if(_tqSecs>0)showTQQuestion();},700);
+}
+function endTimedQuiz(){
+  clearInterval(_tqTimer);
+  document.getElementById('tq-q').style.display='none';
+  document.getElementById('tq-opts').style.display='none';
+  const res=document.getElementById('tq-result');res.style.display='block';
+  const pct=_tqTotal?Math.round((_tqCorrect/_tqTotal)*100):0;
+  document.getElementById('tq-res-score').textContent=_tqCorrect+' / '+_tqTotal+' correct';
+  const msgs=['Keep practising!','Good effort!','Nice work!','Great job!','Excellent!','Perfect score!'];
+  document.getElementById('tq-res-msg').textContent=msgs[Math.min(5,Math.floor(pct/20))]+' You scored '+pct+'%.';
+}
+function closeTimedQuiz(){
+  clearInterval(_tqTimer);
+  const sub=getSubject();
+  if(sub){document.getElementById('tb-title').textContent=sub.icon+' '+sub.name;showScr('lesson');}
+  else{document.getElementById('tb-title').textContent='MasterMind.';showScr('home');}
+}
+
+// ── CALENDAR (activity heatmap) ──
+function buildCalendar(){
+  // Build a 12-week activity map from srData across all subjects
+  const today=new Date();today.setHours(0,0,0,0);
+  const dayMs=86400000;
+  const weeks=16;
+  const days=weeks*7;
+  const activity={};
+  db.subjects.forEach(s=>{
+    // Count mastery progress per day from topic mastery updates
+    // We store session dates in db.weeklyGoal.sessions
+  });
+  // Use weeklyGoal sessions as activity source
+  (db.weeklyGoal?.sessions||[]).forEach(d=>{
+    const key=d.substring?.(0,10)||d;
+    activity[key]=(activity[key]||0)+1;
+  });
+  // Also count from srData nextReview dates (approximates study days)
+  db.subjects.forEach(s=>{
+    Object.values(s.srData||{}).forEach(r=>{
+      if(r.lastReviewed){
+        const key=new Date(r.lastReviewed).toISOString().substring(0,10);
+        activity[key]=(activity[key]||0)+1;
+      }
+    });
+  });
+  // Build grid
+  const startDate=new Date(today.getTime()-(days-1)*dayMs);
+  // month labels
+  const months=[];let lastMonth=-1;
+  const cells=[];
+  for(let i=0;i<days;i++){
+    const d=new Date(startDate.getTime()+i*dayMs);
+    const key=d.toISOString().substring(0,10);
+    const count=activity[key]||0;
+    const level=count===0?0:count===1?1:count<=3?2:count<=5?3:4;
+    const isToday=d.getTime()===today.getTime();
+    const todayStyle=isToday?' style="outline:1.5px solid var(--gold);outline-offset:1px"':'';
+    cells.push(`<div class="cal-day l${level}"${todayStyle} title="${key}: ${count} sessions"></div>`);
+    if(d.getMonth()!==lastMonth){months.push({month:d.toLocaleString('default',{month:'short'}),idx:i});lastMonth=d.getMonth();}
+  }
+  // Render months row
+  let monthHtml='';let prev=0;
+  months.forEach((m,i)=>{
+    const gap=m.idx-prev;
+    monthHtml+=`<span style="margin-left:${gap*(13+3)}px">${m.month}</span>`;
+    prev=m.idx;
+  });
+  return`<div class="cal-wrap">
+    <div class="cal-title">Activity — last ${weeks} weeks</div>
+    <div class="cal-months" style="padding-left:0">${months.slice(0,months.length).map((m,i,a)=>`<span style="flex:${i<a.length-1?a[i+1].idx-m.idx:1}">${m.month}</span>`).join('')}</div>
+    <div class="cal-grid">${cells.join('')}</div>
+    <div class="cal-legend">Less <div class="cal-day" style="display:inline-block;vertical-align:middle;margin:0 2px"></div><div class="cal-day l1" style="display:inline-block;vertical-align:middle;margin:0 2px"></div><div class="cal-day l2" style="display:inline-block;vertical-align:middle;margin:0 2px"></div><div class="cal-day l3" style="display:inline-block;vertical-align:middle;margin:0 2px"></div><div class="cal-day l4" style="display:inline-block;vertical-align:middle;margin:0 2px"></div> More</div>
+  </div>`;
+}
+
+
 init();
 setTimeout(initClerk, 100);
 
@@ -1422,5 +1722,19 @@ setTimeout(initClerk, 100);
     <button class="auth-btn primary" onclick="signInWithEmail()">Continue with Email</button>
     <button class="auth-dismiss" onclick="dismissAuth()" id="auth-dismiss-btn">Continue as guest</button>
   </div>
-</div></body>
+</div>
+<!-- SHARE OVERLAY -->
+<div class="share-overlay" id="share-overlay">
+  <div class="share-box">
+    <h3>Share Subject</h3>
+    <p>Anyone with this link can import this subject and its full curriculum into their MasterMind.</p>
+    <div class="share-url" id="share-url" onclick="copyShareLink()" title="Click to copy">Loading…</div>
+    <div class="share-btns">
+      <button class="share-btn" onclick="closeShare()">Close</button>
+      <button class="share-btn pri" onclick="copyShareLink()">Copy Link</button>
+    </div>
+  </div>
+</div>
+
+</body>
 </html>
