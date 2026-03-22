@@ -1171,7 +1171,103 @@ function fmtTxt(t){return t.replace(/```([\s\S]*?)```/g,'<pre><code>$1</code></p
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function escTpl(s){return String(s||'').replace(/`/g,'\\`').replace(/\$/g,'\\$');}
 
+
+// ════════════════════════════════
+// AUTH — Clerk + Supabase
+// ════════════════════════════════
+const SUPABASE_URL2='https://bjmnpxdsaeucycmcfzjp.supabase.co';
+const SUPABASE_KEY2='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqbW5weGRzYWV1Y3ljbWNmempwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODI3MDAsImV4cCI6MjA4OTY1ODcwMH0.3OJaPNgHvZaX6oydCuQZI46LhuCY8RLYXR_Z4FRcjAs';
+let _supabase=null,clerkUser=null,authToken=null,guestCallCount=0;
+const GUEST_LIMIT=3;
+
+function initSupabase2(){if(window.supabase&&!_supabase)_supabase=window.supabase.createClient(SUPABASE_URL2,SUPABASE_KEY2);}
+
+function showAuth(reason){
+  const o=document.getElementById('auth-overlay'),t=document.getElementById('auth-title'),s=document.getElementById('auth-sub'),d=document.getElementById('auth-dismiss-btn');
+  if(!o)return;
+  if(reason==='guest_limit'){t.textContent="You're making progress.";s.textContent="Sign in to keep learning and save your progress. It's free.";d.style.display='none';}
+  else if(reason==='topbar'){t.textContent='Sign in to MasterMind.';s.textContent='Save your progress and sync across all your devices.';d.style.display='block';}
+  else{t.textContent='Keep learning.';s.textContent='Sign in to save your progress and sync across devices.';d.style.display='block';}
+  o.classList.add('on');
+}
+function dismissAuth(){const o=document.getElementById('auth-overlay');if(o)o.classList.remove('on');}
+async function signInWithGoogle(){if(!window.Clerk)return alert('Auth loading, try again.');try{await window.Clerk.redirectToSignIn({redirectUrl:window.location.href});}catch(e){console.error(e);}}
+async function signInWithEmail(){if(!window.Clerk)return alert('Auth loading, try again.');try{await window.Clerk.redirectToSignIn({redirectUrl:window.location.href});}catch(e){console.error(e);}}
+function openUserMenu(){if(!clerkUser)return showAuth('topbar');if(confirm('Signed in as '+(clerkUser.primaryEmailAddress?.emailAddress||clerkUser.firstName||'User')+'\n\nSign out?'))signOut();}
+async function signOut(){if(window.Clerk)await window.Clerk.signOut();clerkUser=null;authToken=null;updateAuthUI(null);}
+
+function updateAuthUI(user){
+  const pill=document.getElementById('user-pill'),av=document.getElementById('user-av'),nm=document.getElementById('user-name'),btn=document.getElementById('sign-in-btn');
+  if(!pill||!btn)return;
+  if(user){
+    const i=((user.firstName?.[0]||'')+(user.lastName?.[0]||'')).toUpperCase()||user.primaryEmailAddress?.emailAddress?.[0]?.toUpperCase()||'?';
+    av.textContent=i;nm.textContent=user.firstName||user.primaryEmailAddress?.emailAddress?.split('@')[0]||'Account';
+    pill.style.display='flex';btn.style.display='none';
+    const o=document.getElementById('auth-overlay');if(o)o.classList.remove('on');
+  }else{pill.style.display='none';btn.style.display='block';}
+}
+
+// Override callClaude with auth + guest limiting
+const _mm_origCallClaude=callClaude;
+callClaude=async function(messages,maxTokens=1000,jsonMode=false){
+  if(!clerkUser){guestCallCount++;if(guestCallCount>GUEST_LIMIT){showAuth('guest_limit');throw new Error('guest_limit_reached');}}
+  const system=jsonMode?'Return only valid JSON with no markdown, no explanation, no code fences.':'You are MasterMind, an expert adaptive tutor. Teach clearly and rigorously. Include hints and concept labels in every question JSON. Adapt to weak spots.';
+  const headers={'Content-Type':'application/json'};
+  if(authToken)headers['Authorization']='Bearer '+authToken;
+  let resp,data;
+  try{resp=await fetch('/api/claude',{method:'POST',headers,body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,system,messages})});data=await resp.json();}
+  catch(e){throw e;}
+  if(data?.error==='guest_limit_reached'){showAuth('guest_limit');throw new Error('guest_limit_reached');}
+  if(!resp.ok)throw new Error(data?.error||'API error');
+  return data.content?.[0]?.text||'';
+};
+
+// Override saveDB to also sync to Supabase
+const _mm_origSaveDB=saveDB;
+saveDB=function(){
+  localStorage.setItem('mmv5',JSON.stringify(db));
+  clearTimeout(window._syncTimer);
+  window._syncTimer=setTimeout(syncSave2,2000);
+};
+
+async function syncSave2(){
+  if(!clerkUser||!_supabase)return;
+  try{await _supabase.from('user_data').upsert({clerk_id:clerkUser.id,data:JSON.stringify(db),updated_at:new Date().toISOString()},{onConflict:'clerk_id'});}
+  catch(e){console.warn('Sync error:',e);}
+}
+
+async function syncLoad2(){
+  if(!clerkUser||!_supabase)return;
+  try{
+    const {data,error}=await _supabase.from('user_data').select('data').eq('clerk_id',clerkUser.id).single();
+    if(error||!data)return;
+    const loaded=JSON.parse(data.data);
+    if(loaded?.subjects?.length>=(db.subjects?.length||0)){
+      db=loaded;localStorage.setItem('mmv5',JSON.stringify(db));
+      renderSubList();checkRevBadge();renderStreakUI();
+      if(db.lastOpened){const s=db.subjects.find(s=>s.id===db.lastOpened);if(s)openSubject(s.id);}
+    }
+  }catch(e){console.warn('Sync load error:',e);}
+}
+
+async function initClerk(){
+  if(!window.Clerk){setTimeout(initClerk,200);return;}
+  initSupabase2();
+  try{
+    await window.Clerk.load();
+    const user=window.Clerk.user;
+    if(user){clerkUser=user;authToken=await window.Clerk.session?.getToken();updateAuthUI(user);await syncLoad2();}
+    else{updateAuthUI(null);setTimeout(()=>{if(!clerkUser)showAuth('soft');},30000);}
+    window.Clerk.addListener(({user})=>{
+      if(user&&!clerkUser){clerkUser=user;window.Clerk.session?.getToken().then(t=>{authToken=t;});updateAuthUI(user);syncLoad2();dismissAuth();}
+    });
+  }catch(e){console.warn('Clerk init error:',e);updateAuthUI(null);}
+}
+
+
 init();
+setTimeout(initClerk, 100);
+
 </script>
 
 <!-- AUTH OVERLAY -->
@@ -1184,27 +1280,5 @@ init();
     <button class="auth-btn primary" onclick="signInWithEmail()">Continue with Email</button>
     <button class="auth-dismiss" onclick="dismissAuth()" id="auth-dismiss-btn">Continue as guest</button>
   </div>
-</div>
-<script>
-const SUPABASE_URL='https://bjmnpxdsaeucycmcfzjp.supabase.co';
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqbW5weGRzYWV1Y3ljbWNmempwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODI3MDAsImV4cCI6MjA4OTY1ODcwMH0.3OJaPNgHvZaX6oydCuQZI46LhuCY8RLYXR_Z4FRcjAs';
-let supabase=null,clerkUser=null,authToken=null,guestCallCount=0;
-const GUEST_LIMIT=3;
-function initSupabase(){supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);}
-function showAuth(reason){const o=document.getElementById('auth-overlay'),t=document.getElementById('auth-title'),s=document.getElementById('auth-sub'),d=document.getElementById('auth-dismiss-btn');if(reason==='guest_limit'){t.textContent="You're making progress.";s.textContent="Sign in to keep learning and save your progress.";d.style.display='none';}else if(reason==='topbar'){t.textContent='Sign in to MasterMind.';s.textContent='Save your progress and sync across all your devices.';d.style.display='block';}else{t.textContent='Keep learning.';s.textContent='Sign in to save your progress and sync across devices.';d.style.display='block';}o.classList.add('on');}
-function dismissAuth(){document.getElementById('auth-overlay').classList.remove('on');}
-async function signInWithGoogle(){if(!window.Clerk)return alert('Auth loading, try again.');try{await window.Clerk.redirectToSignIn({redirectUrl:window.location.href});}catch(e){console.error(e);}}
-async function signInWithEmail(){if(!window.Clerk)return alert('Auth loading, try again.');try{await window.Clerk.redirectToSignIn({redirectUrl:window.location.href});}catch(e){console.error(e);}}
-function openUserMenu(){if(!clerkUser)return showAuth('topbar');if(confirm('Signed in as '+(clerkUser.primaryEmailAddress?.emailAddress||clerkUser.firstName||'User')+'\n\nSign out?'))signOut();}
-async function signOut(){if(window.Clerk)await window.Clerk.signOut();clerkUser=null;authToken=null;updateAuthUI(null);}
-function updateAuthUI(user){const pill=document.getElementById('user-pill'),av=document.getElementById('user-av'),nm=document.getElementById('user-name'),btn=document.getElementById('sign-in-btn');if(user){const i=((user.firstName?.[0]||'')+(user.lastName?.[0]||'')).toUpperCase()||user.primaryEmailAddress?.emailAddress?.[0]?.toUpperCase()||'?';av.textContent=i;nm.textContent=user.firstName||user.primaryEmailAddress?.emailAddress?.split('@')[0]||'Account';pill.style.display='flex';btn.style.display='none';document.getElementById('auth-overlay').classList.remove('on');}else{pill.style.display='none';btn.style.display='block';}}
-window.callClaude=async function(messages,maxTokens=1000,jsonMode=false){if(!clerkUser){guestCallCount++;if(guestCallCount>GUEST_LIMIT){showAuth('guest_limit');throw new Error('guest_limit_reached');}}const system=jsonMode?'Return only valid JSON with no markdown, no explanation, no code fences.':'You are MasterMind, an expert adaptive tutor. Teach clearly and rigorously. Include hints and concept labels in every question JSON. Adapt to weak spots.';const headers={'Content-Type':'application/json'};if(authToken)headers['Authorization']='Bearer '+authToken;let resp,data;try{resp=await fetch('/api/claude',{method:'POST',headers,body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,system,messages})});data=await resp.json();}catch(e){throw e;}if(data?.error==='guest_limit_reached'){showAuth('guest_limit');throw new Error('guest_limit_reached');}if(!resp.ok)throw new Error(data?.error||'API error');return data.content?.[0]?.text||'';};
-window.saveDB=function(){localStorage.setItem('mmv5',JSON.stringify(db));clearTimeout(window._syncTimer);window._syncTimer=setTimeout(syncSave,2000);};
-async function syncSave(){if(!clerkUser||!supabase)return;try{await supabase.from('user_data').upsert({clerk_id:clerkUser.id,data:JSON.stringify(db),updated_at:new Date().toISOString()},{onConflict:'clerk_id'});}catch(e){console.warn('Sync error:',e);}}
-async function syncLoad(){if(!clerkUser||!supabase)return;try{const {data,error}=await supabase.from('user_data').select('data').eq('clerk_id',clerkUser.id).single();if(error||!data)return;const loaded=JSON.parse(data.data);if(loaded?.subjects?.length>=(db.subjects?.length||0)){db=loaded;localStorage.setItem('mmv5',JSON.stringify(db));renderSubList();checkRevBadge();renderStreakUI();if(db.lastOpened){const s=db.subjects.find(s=>s.id===db.lastOpened);if(s)openSubject(s.id);}}}catch(e){console.warn('Sync load error:',e);}}
-async function initClerk(){if(!window.Clerk){setTimeout(initClerk,200);return;}try{await window.Clerk.load();const user=window.Clerk.user;if(user){clerkUser=user;authToken=await window.Clerk.session?.getToken();updateAuthUI(user);await syncLoad();}else{updateAuthUI(null);setTimeout(()=>{if(!clerkUser)showAuth('soft');},30000);}window.Clerk.addListener(({user})=>{if(user&&!clerkUser){clerkUser=user;window.Clerk.session?.getToken().then(t=>{authToken=t;});updateAuthUI(user);syncLoad();dismissAuth();}});}catch(e){console.warn('Clerk error:',e);updateAuthUI(null);}}
-if(document.readyState!=='loading'){initSupabase();initClerk();}
-else document.addEventListener('DOMContentLoaded',()=>{initSupabase();initClerk();});
-</script>
-</body>
+</div></body>
 </html>
