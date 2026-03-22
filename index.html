@@ -547,6 +547,71 @@ body::after {
 .sign-in-btn{background:var(--text);color:var(--bg);border:none;border-radius:4px;padding:6px 14px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;}
 .sign-in-btn:hover{background:#444;}
 
+
+/* ── LOCKED GATES ── */
+.gate {
+  background:var(--s1); border:1px solid var(--border);
+  border-radius:8px; overflow:hidden; margin-top:4px;
+}
+.gate-hd {
+  padding:12px 18px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.gate-hd-left { display:flex; align-items:center; gap:9px; font-size:13px; font-weight:500; color:var(--text); }
+.gate-badge {
+  font-size:9px; background:rgba(154,106,16,.12); color:var(--warn);
+  padding:3px 9px; border-radius:3px; font-weight:600;
+  text-transform:uppercase; letter-spacing:.8px;
+}
+.gate-body { padding:44px 28px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:14px; }
+.gate-icon {
+  width:48px; height:48px; border-radius:50%;
+  border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; color:var(--muted);
+}
+.gate-title { font-family:'EB Garamond',serif; font-size:20px; font-weight:400; color:var(--cream); margin:0; }
+.gate-sub { font-size:13px; color:var(--muted); max-width:300px; line-height:1.7; margin:0; }
+.gate-checklist { display:flex; flex-direction:column; gap:6px; width:100%; max-width:240px; }
+.gate-check { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
+.gate-check::before { content:'✓'; color:var(--ok); font-size:11px; font-weight:600; flex-shrink:0; }
+.gate-cta {
+  padding:10px 28px; background:var(--text); color:var(--bg);
+  border:none; border-radius:4px; font-family:'Inter',sans-serif;
+  font-size:12px; font-weight:600; cursor:pointer; transition:all .15s;
+  margin-top:4px;
+}
+.gate-cta:hover { background:#444; transform:translateY(-1px); }
+.gate-cta.sec { background:none; color:var(--text); border:1px solid var(--border2); }
+.gate-cta.sec:hover { border-color:var(--text); }
+.gate-note { font-size:11px; color:var(--muted2); margin:0; }
+.gate-note a, .gate-note span { color:var(--muted); text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
+.gate-blur-preview {
+  width:100%; max-width:320px; background:var(--s2);
+  border:1px solid var(--border); border-radius:6px;
+  padding:14px 16px; display:flex; flex-direction:column; gap:8px;
+  filter:blur(4px); pointer-events:none; user-select:none;
+}
+.gate-blur-row { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
+.gate-blur-bar { height:3px; background:var(--border2); border-radius:2px; overflow:hidden; }
+.gate-blur-fill { height:100%; border-radius:2px; }
+
+/* inline guest limit nudge */
+.guest-nudge {
+  background:var(--s2); border:1px solid var(--border2);
+  border-radius:6px; padding:18px 20px;
+  display:flex; gap:14px; align-items:flex-start; margin-top:4px;
+}
+.guest-nudge-av {
+  width:32px; height:32px; flex-shrink:0; border-radius:50%;
+  border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; margin-top:1px;
+}
+.guest-nudge-title { font-family:'EB Garamond',serif; font-size:17px; font-weight:400; color:var(--cream); margin:0 0 4px; }
+.guest-nudge-sub { font-size:12px; color:var(--muted); line-height:1.6; margin:0 0 12px; }
+.guest-nudge-btns { display:flex; gap:7px; flex-wrap:wrap; }
+
 </style>
 </head>
 <body>
@@ -606,6 +671,7 @@ body::after {
     </div>
     <div class="tb-acts">
       <button class="tb-btn" id="btn-tts" onclick="toggleTTS()" style="display:none">♪</button>
+      <button class="tb-btn" id="btn-flash" onclick="openFlashcards()" style="display:none">⊞ Cards</button>
       <button class="tb-btn" id="btn-prog" onclick="openProg()" style="display:none">Progress</button>
       <button class="tb-btn" id="btn-exp" onclick="exportPDF()" style="display:none">Export</button>
       <div class="user-pill" id="user-pill" onclick="openUserMenu()"><div class="user-pill-av" id="user-av">?</div><span class="user-pill-name" id="user-name">Account</span></div>
@@ -854,7 +920,7 @@ async function openSubject(id){
   recordSession();saveDB();renderSubList();checkRevBadge();
   document.getElementById('tb-title').textContent=`${sub.icon} ${sub.name}`;
   document.getElementById('tb-prog').style.display='flex';
-  ['btn-prog','btn-exp','btn-tts'].forEach(i=>document.getElementById(i).style.display='inline-flex');
+  ['btn-prog','btn-exp','btn-tts','btn-flash'].forEach(i=>document.getElementById(i).style.display='inline-flex');
   showScr('lesson');
   session={subject:sub,questionsPerTopic:3,masteryThreshold:75,isReview:false};
   updateProgUI();buildRail();
@@ -868,7 +934,7 @@ async function openSubject(id){
   }
 }
 
-function delSub(e,id){e.stopPropagation();if(!confirm('Delete this subject and all progress?'))return;db.subjects=db.subjects.filter(s=>s.id!==id);if(db.lastOpened===id){db.lastOpened=null;curId=null;showScr('home');['tb-prog','btn-prog','btn-exp','btn-tts'].forEach(i=>document.getElementById(i).style.display='none');document.getElementById('tb-title').textContent='MasterMind.';}saveDB();renderSubList();checkRevBadge();}
+function delSub(e,id){e.stopPropagation();if(!confirm('Delete this subject and all progress?'))return;db.subjects=db.subjects.filter(s=>s.id!==id);if(db.lastOpened===id){db.lastOpened=null;curId=null;showScr('home');['tb-prog','btn-prog','btn-exp','btn-tts','btn-flash'].forEach(i=>document.getElementById(i).style.display='none');document.getElementById('tb-title').textContent='MasterMind.';}saveDB();renderSubList();checkRevBadge();}
 
 // ── TEACH ──
 async function teachTopic(ti){
@@ -1072,6 +1138,7 @@ async function startRevTopic(subId,ti){
 
 // ── PROGRESS ──
 function openProg(){
+  if(!clerkUser){showAuth('progress_gate');showScr('progress');document.getElementById('tb-title').textContent='Progress';document.getElementById('tb-prog').style.display='none';return;}
   showScr('progress');document.getElementById('tb-title').textContent='Progress';document.getElementById('tb-prog').style.display='none';
   const subs=db.subjects;
   document.getElementById('ps-sub').textContent=`${subs.length} subject${subs.length!==1?'s':''} · ${subs.reduce((a,s)=>a+(s.topics||[]).length,0)} topics · ${db.streak.count||0} day streak`;
@@ -1149,7 +1216,7 @@ function updateProgUI(){
 }
 
 function showScr(name){
-  ['home','lesson','review','prog'].forEach(n=>document.getElementById(`${n}-scr`).style.display='none');
+  ['home','lesson','review','prog'].forEach(n=>document.getElementById(`${n}-scr`).style.display='none');const fscr=document.getElementById('flash-scr');if(fscr)fscr.style.display='none';
   document.getElementById(`${name}-scr`).style.display='flex';
 }
 function showLoad(t){document.getElementById('lo').classList.add('on');document.getElementById('lo-txt').textContent=t||'Loading…';}
@@ -1183,10 +1250,36 @@ const GUEST_LIMIT=3;
 function initSupabase2(){if(window.supabase&&!_supabase)_supabase=window.supabase.createClient(SUPABASE_URL2,SUPABASE_KEY2);}
 
 function showAuth(reason){
+  // For guest limit — show inline nudge in lesson panel instead of modal
+  if(reason==='guest_limit'){
+    const panel=document.getElementById('lesson-panel');
+    if(panel){
+      const nudge=document.createElement('div');
+      nudge.className='guest-nudge';
+      nudge.innerHTML=`<div class="guest-nudge-av">✦</div><div style="flex:1"><p class="guest-nudge-title">You're making good progress.</p><p class="guest-nudge-sub">You've used your 3 free lessons. Sign in to keep learning — your subjects and mastery scores will be saved and synced across every device.</p><div class="guest-nudge-btns"><button class="gate-cta" onclick="signInWithGoogle()">Sign in free</button><button class="gate-cta sec" onclick="this.closest('.guest-nudge').remove()">Maybe later</button></div></div>`;
+      panel.appendChild(nudge);
+      nudge.scrollIntoView({behavior:'smooth',block:'end'});
+      return;
+    }
+  }
+  // For progress screen — show progress gate
+  if(reason==='progress_gate'){
+    const grid=document.getElementById('ps-grid');
+    const chart=document.getElementById('ps-chart');
+    if(grid){
+      grid.innerHTML='';
+      chart.innerHTML='';
+      const gate=document.createElement('div');
+      gate.style.cssText='max-width:560px;width:100%';
+      gate.innerHTML=`<div class="gate"><div class="gate-hd"><div class="gate-hd-left">📊 Progress</div></div><div class="gate-body"><div class="gate-blur-preview"><div class="gate-blur-row"><span>Calculus</span><span style="font-weight:500">84%</span></div><div class="gate-blur-bar"><div class="gate-blur-fill" style="width:84%;background:var(--ok)"></div></div><div class="gate-blur-row" style="margin-top:6px"><span>Python</span><span style="font-weight:500">61%</span></div><div class="gate-blur-bar"><div class="gate-blur-fill" style="width:61%;background:var(--warn)"></div></div><div class="gate-blur-row" style="margin-top:6px"><span>Biology</span><span style="font-weight:500">29%</span></div><div class="gate-blur-bar"><div class="gate-blur-fill" style="width:29%;background:var(--danger)"></div></div></div><p class="gate-title">Your progress is waiting.</p><p class="gate-sub">Sign in to track mastery, see weak spots across all subjects, and pick up where you left off on any device.</p><button class="gate-cta" onclick="signInWithGoogle()">Sign in to continue</button><p class="gate-note">Don't have an account? <span onclick="signInWithGoogle()">Create one free</span></p></div></div>`;
+      grid.appendChild(gate);
+      return;
+    }
+  }
+  // Default modal for topbar and soft prompts
   const o=document.getElementById('auth-overlay'),t=document.getElementById('auth-title'),s=document.getElementById('auth-sub'),d=document.getElementById('auth-dismiss-btn');
   if(!o)return;
-  if(reason==='guest_limit'){t.textContent="You're making progress.";s.textContent="Sign in to keep learning and save your progress. It's free.";d.style.display='none';}
-  else if(reason==='topbar'){t.textContent='Sign in to MasterMind.';s.textContent='Save your progress and sync across all your devices.';d.style.display='block';}
+  if(reason==='topbar'){t.textContent='Sign in to MasterMind.';s.textContent='Save your progress and sync across all your devices.';d.style.display='block';}
   else{t.textContent='Keep learning.';s.textContent='Sign in to save your progress and sync across devices.';d.style.display='block';}
   o.classList.add('on');
 }
@@ -1264,6 +1357,55 @@ async function initClerk(){
   }catch(e){console.warn('Clerk init error:',e);updateAuthUI(null);}
 }
 
+
+
+// ── FLASHCARDS ──
+let _flashIdx=0,_flashCards=[],_flashPrev='lesson';
+function openFlashcards(){
+  const sub=getSubject();if(!sub||!sub.topics.length)return;
+  if(!clerkUser){
+    const panel=document.getElementById('lesson-panel');
+    if(panel){
+      const existing=document.getElementById('flash-gate-msg');if(existing)existing.remove();
+      const gate=document.createElement('div');gate.id='flash-gate-msg';
+      gate.innerHTML=`<div class="gate"><div class="gate-hd"><div class="gate-hd-left">🃏 Flashcard Mode</div><span class="gate-badge">Sign in</span></div><div class="gate-body"><div class="gate-icon">🔒</div><p class="gate-title">Study smarter with flashcards.</p><p class="gate-sub">Flip through every topic as a card deck — with keyboard shortcuts, spaced review, and instant recall drills.</p><div class="gate-checklist"><div class="gate-check">Flip cards on any subject</div><div class="gate-check">Keyboard nav — space &amp; arrows</div><div class="gate-check">Progress tracked per card</div></div><button class="gate-cta" onclick="signInWithGoogle()">Sign in to unlock</button><p class="gate-note">Free with any account</p></div></div>`;
+      panel.appendChild(gate);gate.scrollIntoView({behavior:'smooth',block:'end'});
+    }
+    return;
+  }
+  // Signed in — show real flashcards
+  _flashCards=sub.topics;_flashIdx=0;_flashPrev='lesson';
+  document.getElementById('tb-title').textContent=sub.icon+' '+sub.name+' — Cards';
+  document.getElementById('tb-prog').style.display='none';
+  // Build flash screen if not exists
+  let fs=document.getElementById('flash-scr');
+  if(!fs){
+    fs=document.createElement('div');fs.id='flash-scr';
+    fs.style.cssText='display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 24px;gap:20px;overflow-y:auto;width:100%;height:100%';
+    fs.innerHTML=`<div style="display:flex;align-items:center;gap:12px;width:100%;max-width:520px"><button onclick="closeFlashcards()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:4px;font-family:'Inter',sans-serif;font-size:11px;cursor:pointer">← Back</button><div id="fl-title" style="font-family:'EB Garamond',serif;font-size:18px;flex:1;color:var(--cream)"></div><span id="fl-cnt" style="font-size:11px;color:var(--muted)"></span></div><div style="width:100%;max-width:520px;perspective:1200px;min-height:240px"><div id="fl-card" onclick="flipCard()" style="width:100%;min-height:240px;position:relative;cursor:pointer;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1)"><div style="position:absolute;inset:0;background:var(--s1);border:1px solid var(--border2);border-radius:8px;padding:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;backface-visibility:hidden;text-align:center;gap:12px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)">Topic</div><div id="fl-front" style="font-family:'EB Garamond',serif;font-size:22px;color:var(--cream);line-height:1.4"></div><div style="font-size:10px;color:var(--muted2)">tap to reveal</div></div><div style="position:absolute;inset:0;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;backface-visibility:hidden;transform:rotateY(180deg);text-align:center;gap:12px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)">Summary</div><div id="fl-back" style="font-size:14px;color:var(--text);line-height:1.7;max-width:400px"></div></div></div></div><div style="display:flex;gap:10px;align-items:center;width:100%;max-width:520px"><button onclick="flashNav(-1)" id="fl-prev" style="background:var(--s1);border:1px solid var(--border2);color:var(--text);padding:9px 22px;border-radius:4px;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer">← Prev</button><div style="flex:1;height:2px;background:var(--border2);border-radius:1px;overflow:hidden"><div id="fl-prog" style="height:100%;background:var(--gold);transition:width .4s ease"></div></div><button onclick="flashNav(1)" id="fl-next" style="background:var(--s1);border:1px solid var(--border2);color:var(--text);padding:9px 22px;border-radius:4px;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer">Next →</button></div>`;
+    document.getElementById('content').appendChild(fs);
+  }
+  showScr('flash');renderFlashCard();
+}
+function closeFlashcards(){
+  document.getElementById('tb-prog').style.display='flex';
+  const sub=getSubject();if(sub)document.getElementById('tb-title').textContent=sub.icon+' '+sub.name;
+  showScr(_flashPrev||'lesson');
+}
+function renderFlashCard(){
+  const t=_flashCards[_flashIdx];
+  const card=document.getElementById('fl-card');if(card)card.style.transform='';
+  const f=document.getElementById('fl-front'),b=document.getElementById('fl-back');
+  if(f)f.textContent=t.title;
+  if(b)b.textContent=t.summary||'No summary available.';
+  const cnt=document.getElementById('fl-cnt');if(cnt)cnt.textContent=(_flashIdx+1)+' / '+_flashCards.length;
+  const title=document.getElementById('fl-title');if(title&&getSubject())title.textContent=getSubject().name;
+  const prog=document.getElementById('fl-prog');if(prog)prog.style.width=Math.round(((_flashIdx+1)/_flashCards.length)*100)+'%';
+  const prev=document.getElementById('fl-prev'),next=document.getElementById('fl-next');
+  if(prev)prev.disabled=_flashIdx===0;if(next)next.disabled=_flashIdx===_flashCards.length-1;
+}
+function flipCard(){const c=document.getElementById('fl-card');if(c)c.style.transform=c.style.transform?'':'rotateY(180deg)';}
+function flashNav(dir){_flashIdx=Math.max(0,Math.min(_flashCards.length-1,_flashIdx+dir));renderFlashCard();}
 
 init();
 setTimeout(initClerk, 100);
