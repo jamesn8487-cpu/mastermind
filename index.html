@@ -552,6 +552,18 @@ body::after {
 .btn-ok { padding:9px 22px; background:var(--text); border:none; border-radius:4px; color:var(--bg); font-family:'Inter',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; }
 .btn-ok:hover { background:#444; }
 
+/* ── Welcome / Sign-in prompt modal ── */
+#welcome-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); backdrop-filter:blur(8px); z-index:1200; align-items:center; justify-content:center; padding:16px; }
+#welcome-overlay.on { display:flex; }
+.welcome-box { background:var(--s1); border:1px solid var(--border2); border-radius:10px; padding:32px 28px; max-width:380px; width:100%; text-align:center; }
+.welcome-logo { font-family:'EB Garamond',serif; font-size:28px; color:var(--cream); margin-bottom:6px; }
+.welcome-sub { font-size:13px; color:var(--muted); margin-bottom:24px; line-height:1.6; }
+.welcome-btn-primary { width:100%; padding:11px 0; background:var(--text); border:none; border-radius:5px; color:var(--bg); font-family:'Inter',sans-serif; font-size:13px; font-weight:600; cursor:pointer; margin-bottom:10px; transition:background .15s; }
+.welcome-btn-primary:hover { background:#444; }
+.welcome-btn-ghost { width:100%; padding:10px 0; background:none; border:1px solid var(--border2); border-radius:5px; color:var(--muted); font-family:'Inter',sans-serif; font-size:12px; cursor:pointer; transition:border-color .15s; }
+.welcome-btn-ghost:hover { border-color:var(--text); color:var(--text); }
+.welcome-divider { font-size:11px; color:var(--muted2); margin:14px 0 10px; }
+
 /* goal modal */
 #goal-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.25); backdrop-filter:blur(5px); z-index:998; align-items:center; justify-content:center; }
 #goal-modal.on { display:flex; }
@@ -839,6 +851,18 @@ body::after {
   </div>
 </div>
 
+<!-- WELCOME / SIGN-IN MODAL -->
+<div id="welcome-overlay">
+  <div class="welcome-box">
+    <div class="welcome-logo">✦ MasterMind</div>
+    <p class="welcome-sub">Sign in to save your progress, sync across devices, and unlock all features.</p>
+    <button class="welcome-btn-primary" onclick="signInWithGoogle();closeWelcome()">Sign in with Google</button>
+    <button class="welcome-btn-primary" style="margin-bottom:0;background:var(--s2);color:var(--text);border:1px solid var(--border2);" onclick="showEmailAuth();closeWelcome()">Sign in with email</button>
+    <div class="welcome-divider">or</div>
+    <button class="welcome-btn-ghost" onclick="closeWelcome()">Continue as guest →</button>
+  </div>
+</div>
+
 <!-- GOAL MODAL -->
 <div id="goal-modal">
   <div class="gm-box">
@@ -990,12 +1014,16 @@ function renderSubList(){
 // ── MODAL ──
 function openModal(){pendingFiles={s:'',t:'',q:''};document.getElementById('m-name').value='';['s','t','q'].forEach(k=>{document.getElementById(`uz-st-${k}`).textContent='';document.getElementById(`uz-${k}`).classList.remove('filled');document.getElementById(`pa-${k}`).value='';document.getElementById(`pa-${k}`).style.display='none';});document.querySelectorAll('.ico-o').forEach((e,i)=>e.classList.toggle('sel',i===0));document.getElementById('modal-overlay').classList.add('on');setTimeout(()=>document.getElementById('m-name').focus(),100);}
 function closeModal(){document.getElementById('modal-overlay').classList.remove('on');}
+function showWelcome(){document.getElementById('welcome-overlay').classList.add('on');}
+function closeWelcome(){document.getElementById('welcome-overlay').classList.remove('on');}
 function selIco(el){document.querySelectorAll('.ico-o').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
 function togPaste(e,id){e.stopPropagation();e.preventDefault();const t=document.getElementById(id);t.style.display=t.style.display==='none'?'block':'none';}
 async function handleFile(e,k){const f=e.target.files[0];if(!f)return;pendingFiles[k]=await f.text();document.getElementById(`uz-st-${k}`).textContent=`✓ ${f.name}`;document.getElementById(`uz-${k}`).classList.add('filled');}
 function getContent(){let o='';const m={s:'SLIDES/NOTES',t:'TUTORIAL',q:'PRACTICE QUESTIONS'};Object.entries(m).forEach(([k,l])=>{const c=((pendingFiles[k]||'')+'\n'+(document.getElementById(`pa-${k}`)?.value||'')).trim();if(c)o+=`\n\n=== ${l} ===\n${c}`;});return o.trim();}
 
 async function createSubject(){
+  // Require sign-in to create a subject
+  if(!clerkUser){closeModal();showWelcome();return;}
   const name=document.getElementById('m-name').value.trim();if(!name){document.getElementById('m-name').focus();return;}
   const icon=document.querySelector('.ico-o.sel')?.dataset.icon||'📚';
   const content=getContent();closeModal();showLoad('Analysing content…');
@@ -1489,7 +1517,16 @@ async function initClerk(){
     await window.Clerk.load();
     const user=window.Clerk.user;
     if(user){clerkUser=user;authToken=await window.Clerk.session?.getToken();updateAuthUI(user);await syncLoad2();}
-    else{updateAuthUI(null);setTimeout(()=>{if(!clerkUser)showAuth('soft');},30000);}
+    else{
+      updateAuthUI(null);
+      // If arriving from landing page via ?signin=1, show welcome modal immediately
+      if(new URLSearchParams(window.location.search).get('signin')==='1'){
+        history.replaceState(null,'',window.location.pathname);
+        setTimeout(showWelcome,400);
+      } else {
+        setTimeout(()=>{if(!clerkUser)showAuth('soft');},30000);
+      }
+    }
     window.Clerk.addListener(({user})=>{
       if(user&&!clerkUser){clerkUser=user;window.Clerk.session?.getToken().then(t=>{authToken=t;});updateAuthUI(user);syncLoad2();dismissAuth();}
     });
