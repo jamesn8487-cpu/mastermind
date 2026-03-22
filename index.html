@@ -1138,7 +1138,7 @@ async function startRevTopic(subId,ti){
 
 // ── PROGRESS ──
 function openProg(){
-  if(!clerkUser){showAuth('progress_gate');showScr('progress');document.getElementById('tb-title').textContent='Progress';document.getElementById('tb-prog').style.display='none';return;}
+  if(!clerkUser){showAuth('progress_gate');['home','lesson','review','prog'].forEach(n=>{const el=document.getElementById(`${n}-scr`);if(el)el.style.display='none';});const ps=document.getElementById('prog-scr');if(ps)ps.style.display='flex';document.getElementById('tb-title').textContent='Progress';document.getElementById('tb-prog').style.display='none';return;}document.getElementById('tb-title').textContent='Progress';document.getElementById('tb-prog').style.display='none';return;}
   showScr('progress');document.getElementById('tb-title').textContent='Progress';document.getElementById('tb-prog').style.display='none';
   const subs=db.subjects;
   document.getElementById('ps-sub').textContent=`${subs.length} subject${subs.length!==1?'s':''} · ${subs.reduce((a,s)=>a+(s.topics||[]).length,0)} topics · ${db.streak.count||0} day streak`;
@@ -1216,7 +1216,7 @@ function updateProgUI(){
 }
 
 function showScr(name){
-  ['home','lesson','review','prog'].forEach(n=>document.getElementById(`${n}-scr`).style.display='none');const fscr=document.getElementById('flash-scr');if(fscr)fscr.style.display='none';
+  ['home','lesson','review','prog'].forEach(n=>{const el=document.getElementById(`${n}-scr`);if(el)el.style.display='none';});const fscr=document.getElementById('flash-scr');if(fscr)fscr.style.display='none';
   document.getElementById(`${name}-scr`).style.display='flex';
 }
 function showLoad(t){document.getElementById('lo').classList.add('on');document.getElementById('lo-txt').textContent=t||'Loading…';}
