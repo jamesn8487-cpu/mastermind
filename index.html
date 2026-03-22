@@ -1350,7 +1350,29 @@ async function callClaude(messages,maxTokens=1000,jsonMode=false){
 // ── UTILS ──
 function getSubject(){return db.subjects.find(s=>s.id===curId)||null;}
 function saveSubject(){const sub=getSubject();if(!sub)return;const idx=db.subjects.findIndex(s=>s.id===sub.id);if(idx>=0)db.subjects[idx]=sub;saveDB();}
-function fmtTxt(t){return t.replace(/```([\s\S]*?)```/g,'<pre><code>$1</code></pre>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^# (.+)$/gm,'<h2>$1</h2>').replace(/^\- (.+)$/gm,'<li>$1</li>').replace(/(<li>.*<\/li>)/g,'<ul>$1</ul>').replace(/\n\n+/g,'</p><p>').replace(/^([^<].*[^>])$/gm,m=>m.startsWith('<')?m:`<p>${m}</p>`).replace(/<p><\/p>/g,'');}
+function fmtTxt(t){
+  // Step 1: Extract code blocks BEFORE escaping so we can restore them
+  const codeBlocks=[];
+  t=t.replace(/```([\s\S]*?)```/g,(_,code)=>{codeBlocks.push(code);return`\x00CODE${codeBlocks.length-1}\x00`;});
+  const inlineCode=[];
+  t=t.replace(/`([^`]+)`/g,(_,code)=>{inlineCode.push(code);return`\x00INLINE${inlineCode.length-1}\x00`;});
+  // Step 2: Escape all remaining HTML entities
+  t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  // Step 3: Apply markdown formatting on safe text
+  t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  t=t.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  t=t.replace(/^## (.+)$/gm,'<h2>$2</h2>'.replace('$2','$1'));
+  t=t.replace(/^# (.+)$/gm,'<h2>$1</h2>');
+  t=t.replace(/^- (.+)$/gm,'<li>$1</li>');
+  t=t.replace(/(<li>[\s\S]*?<\/li>)/g,'<ul>$1</ul>');
+  t=t.replace(/\n\n+/g,'</p><p>');
+  t=t.replace(/^([^<\n].*[^>])$/gm,m=>m.startsWith('<')?m:`<p>${m}</p>`);
+  t=t.replace(/<p><\/p>/g,'');
+  // Step 4: Restore escaped code blocks
+  t=t.replace(/\x00CODE(\d+)\x00/g,(_,i)=>`<pre><code>${codeBlocks[i].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`);
+  t=t.replace(/\x00INLINE(\d+)\x00/g,(_,i)=>`<code>${inlineCode[i].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code>`);
+  return t;
+}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function escTpl(s){return String(s||'').replace(/`/g,'\\`').replace(/\$/g,'\\$');}
 
@@ -1459,8 +1481,9 @@ async function syncLoad2(){
   }catch(e){console.warn('Sync load error:',e);}
 }
 
+let _clerkRetries=0;
 async function initClerk(){
-  if(!window.Clerk){setTimeout(initClerk,200);return;}
+  if(!window.Clerk){if(++_clerkRetries>50){console.warn('Clerk failed to load after 10s');updateAuthUI(null);return;}setTimeout(initClerk,200);return;}
   initSupabase2();
   try{
     await window.Clerk.load();
@@ -1563,10 +1586,19 @@ function copyShareLink(){
   try{
     const data=JSON.parse(decodeURIComponent(escape(atob(raw))));
     if(!data.n||!data.t?.length)return;
+    // Sanitise imported data — never trust external input
+    const safeName=String(data.n||'').substring(0,100).replace(/[<>]/g,'');
+    const safeIcon=String(data.i||'📚').substring(0,4);
+    const safeTopics=(data.t||[]).filter(t=>t&&typeof t.title==='string').map(t=>({
+      title:String(t.title||'').substring(0,200).replace(/[<>]/g,''),
+      summary:String(t.summary||'').substring(0,500).replace(/[<>]/g,''),
+      estimatedMins:Math.min(Math.max(Number(t.estimatedMins)||5,1),60)
+    }));
+    if(!safeName||!safeTopics.length)return;
     setTimeout(()=>{
-      if(confirm(`Import "${data.n}" (${data.t.length} topics) into MasterMind?`)){
+      if(confirm(`Import "${safeName}" (${safeTopics.length} topics) into MasterMind?`)){
         const id='sub_'+Date.now();
-        const sub={id,name:data.n,icon:data.i||'📚',content:data.c||`[AI:${data.n}]`,topics:data.t,topicMastery:{},topicAttempts:{},topicCorrect:{},topicUnlocked:{0:true},currentTopic:0,overallMastery:0,createdAt:Date.now(),lastOpened:Date.now(),conversationHistory:[],savedMessages:[],srData:{},missedConcepts:{},flaggedQuestions:[]};
+        const sub={id,name:safeName,icon:safeIcon,content:`[AI:${safeName}]`,topics:safeTopics,topicMastery:{},topicAttempts:{},topicCorrect:{},topicUnlocked:{0:true},currentTopic:0,overallMastery:0,createdAt:Date.now(),lastOpened:Date.now(),conversationHistory:[],savedMessages:[],srData:{},missedConcepts:{},flaggedQuestions:[]};
         db.subjects.push(sub);saveDB();renderSubList();openSubject(id);
         window.history.replaceState({},'',window.location.pathname);
       }
@@ -1622,7 +1654,7 @@ function showTQQuestion(){
   const q=_tqQuestions[_tqIdx%_tqQuestions.length];
   _tqLocked=false;
   document.getElementById('tq-q').textContent=q.q;
-  document.getElementById('tq-opts').innerHTML=q.opts.map((o,i)=>`<button class="tq-opt" onclick="answerTQ(${i})">${o}</button>`).join('');
+  document.getElementById('tq-opts').innerHTML=q.opts.map((o,i)=>`<button class="tq-opt" onclick="answerTQ(${i})">${esc(o)}</button>`).join('');
 }
 function answerTQ(i){
   if(_tqLocked)return;_tqLocked=true;_tqTotal++;
